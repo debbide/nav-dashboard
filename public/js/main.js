@@ -147,7 +147,7 @@ function setupSearch() {
     const engines = {
         google: 'https://www.google.com/search?q=',
         bing: 'https://www.bing.com/search?q=',
-        baidu: 'https://www.baidu.com/s?wd=',
+        github: 'https://github.com/search?q=',
         duckduckgo: 'https://duckduckgo.com/?q='
     };
 
