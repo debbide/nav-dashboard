@@ -96,19 +96,48 @@ function renderSites(sites) {
 
     sites.forEach(site => {
         const card = createSiteCard(site);
+        container.appendChild(card);
+    });
+}
 
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const categoryId = document.querySelector('.category-tab.active')?.dataset.category || 'all';
-                loadSites(categoryId, e.target.value);
-            }, 300);
-        });
-    }
+// 创建站点卡片（横向布局）
+function createSiteCard(site) {
+    const card = document.createElement('a');
+    card.href = site.url;
+    card.target = '_blank';
+    card.className = 'site-card glass-effect';
+
+    const logo = site.logo || 'https://via.placeholder.com/64?text=' + encodeURIComponent(site.name.charAt(0));
+
+    card.innerHTML = `
+    <img class="site-logo" src="${logo}" alt="${site.name}" onerror="this.src='https://via.placeholder.com/64?text=${encodeURIComponent(site.name.charAt(0))}'">
+    <div class="site-info">
+      <h3 class="site-name">${site.name}</h3>
+      <p class="site-desc">${site.description || ''}</p>
+      ${site.category_name ? `<span class="site-category" style="background: ${site.category_color || '#a78bfa'}30; color: ${site.category_color || '#a78bfa'}">${site.category_name}</span>` : ''}
+    </div>
+  `;
+
+    return card;
+}
+
+// 搜索功能
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const categoryId = document.querySelector('.category-tab.active')?.dataset.category || 'all';
+            loadSites(categoryId, e.target.value);
+        }, 300);
+    });
+}
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-        loadCategories();
-        loadSites();
-        setupSearch();
-    });
+    loadCategories();
+    loadSites();
+    setupSearch();
+});
