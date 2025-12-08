@@ -53,17 +53,20 @@ cd nav-dashboard
 
 > 💡 详细配置步骤请查看 [GITHUB_DEPLOY.md](GITHUB_DEPLOY.md)
 
-### 第 3 步：初始化数据库（仅首次）
+### 第 3 步：初始化数据库（⚠️ 仅首次部署执行）
+
+> **重要**：此步骤只需在首次部署时执行一次，后续更新无需重复！
 
 1. 进入 GitHub 仓库的 **Actions** 标签
 2. 选择 **Initialize Database**
 3. 点击 **Run workflow**
-4. 可选择是否导入示例数据
+4. `reset_data` 选择 `true` 可导入示例数据，选择 `false` 则只创建空表
 
 ### 第 4 步：部署应用
 
 1. 选择 **Deploy to Cloudflare**
 2. 点击 **Run workflow**
+3. 后续代码更新会自动触发部署
 
 ### 🎉 完成！
 
