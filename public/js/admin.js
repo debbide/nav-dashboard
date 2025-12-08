@@ -74,12 +74,13 @@ function renderSitesTable() {
     const tbody = document.getElementById('sitesTableBody');
 
     if (sites.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">暂无站点数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">暂无站点数据</td></tr>';
         return;
     }
 
     tbody.innerHTML = sites.map(site => `
-    <tr>
+    <tr data-id="${site.id}">
+      <td class="drag-handle" style="cursor: grab; padding: 0.5rem; color: rgba(255,255,255,0.5);">⋮⋮</td>
       <td>
         <img src="${site.logo || getDefaultLogo(site.url)}" 
              alt="${site.name}" 
@@ -99,6 +100,50 @@ function renderSitesTable() {
       </td>
     </tr>
   `).join('');
+
+    // 初始化拖拽排序
+    initSortable();
+}
+
+// 初始化拖拽排序
+function initSortable() {
+    const tbody = document.getElementById('sitesTableBody');
+    if (typeof Sortable !== 'undefined' && tbody.children.length > 0 && tbody.children[0].dataset.id) {
+        new Sortable(tbody, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: async function (evt) {
+                const rows = tbody.querySelectorAll('tr[data-id]');
+                const newOrder = Array.from(rows).map((row, index) => ({
+                    id: parseInt(row.dataset.id),
+                    sort_order: index
+                }));
+                await saveSortOrder(newOrder);
+            }
+        });
+    }
+}
+
+// 保存排序顺序
+async function saveSortOrder(newOrder) {
+    try {
+        const response = await fetch('/api/sites/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: newOrder })
+        });
+        const result = await response.json();
+        if (result.success) {
+            showNotification('排序已保存', 'success');
+            await loadSites();
+        } else {
+            showNotification('保存排序失败', 'error');
+        }
+    } catch (error) {
+        console.error('保存排序失败:', error);
+        showNotification('保存排序失败', 'error');
+    }
 }
 
 // 打开站点模态框（新建）
@@ -442,7 +487,7 @@ async function loadBackgroundSetting() {
     try {
         const response = await fetch(`${API_BASE}/api/settings/background`);
         const data = await response.json();
-        
+
         if (data.background_image) {
             document.getElementById('backgroundUrl').value = data.background_image;
         }
@@ -459,9 +504,9 @@ async function saveBackgroundSetting(url) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ background_image: url })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.background_image) {
             showNotification('背景设置已保存', 'success');
             // 更新首页背景
@@ -481,23 +526,23 @@ async function saveBackgroundSetting(url) {
 function initBackgroundSettings() {
     const form = document.getElementById('backgroundForm');
     if (!form) return;
-    
+
     // 加载当前背景
     loadBackgroundSetting();
-    
+
     // 表单提交
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const url = document.getElementById('backgroundUrl').value.trim();
-        
+
         if (!url) {
             showNotification('请输入背景图片URL', 'error');
             return;
         }
-        
+
         await saveBackgroundSetting(url);
     });
-    
+
     // 预设背景按钮
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -505,7 +550,7 @@ function initBackgroundSettings() {
             document.getElementById('backgroundUrl').value = url;
             await saveBackgroundSetting(url);
         });
-        
+
         // 鼠标悬停效果
         btn.addEventListener('mouseenter', () => {
             btn.style.borderColor = '#a78bfa';
@@ -519,8 +564,8 @@ function initBackgroundSettings() {
 }
 
 // 在切换到背景设置标签时初始化
-const originalSwitchTab = window.switchTab || function() {};
-window.switchTab = function(tabName) {
+const originalSwitchTab = window.switchTab || function () { };
+window.switchTab = function (tabName) {
     originalSwitchTab(tabName);
     if (tabName === 'background') {
         initBackgroundSettings();

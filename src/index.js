@@ -144,6 +144,10 @@ async function handleAPI(request, env, pathname, corsHeaders) {
         if (method === 'DELETE') return await deleteSite(id, env, corsHeaders);
     }
 
+    if (pathname === '/api/sites/reorder' && method === 'POST') {
+        return await reorderSites(request, env, corsHeaders);
+    }
+
     if (pathname === '/api/categories') {
         if (method === 'GET') return await getCategories(env, corsHeaders);
         if (method === 'POST') return await createCategory(request, env, corsHeaders);
@@ -262,6 +266,28 @@ async function deleteSite(id, env, corsHeaders) {
 }
 
 // ==================== 分类操作 ====================
+
+// 批量更新站点排序
+async function reorderSites(request, env, corsHeaders) {
+    try {
+        const { order } = await request.json();
+
+        if (!order || !Array.isArray(order)) {
+            return jsonResponse({ success: false, message: '无效的排序数据' }, 400, corsHeaders);
+        }
+
+        // 批量更新排序
+        for (const item of order) {
+            await env.DB.prepare('UPDATE sites SET sort_order = ? WHERE id = ?')
+                .bind(item.sort_order, item.id)
+                .run();
+        }
+
+        return jsonResponse({ success: true, message: '排序更新成功' }, 200, corsHeaders);
+    } catch (error) {
+        return jsonResponse({ success: false, message: '排序更新失败: ' + error.message }, 500, corsHeaders);
+    }
+}
 
 async function getCategories(env, corsHeaders) {
     const { results } = await env.DB.prepare(`
