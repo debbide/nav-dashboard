@@ -82,6 +82,37 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: 配置 Pages 绑定
+        run: |
+          echo "自动配置 D1 和 KV 绑定..."
+          
+          # 使用 Cloudflare API 配置 Pages 绑定
+          curl -X PATCH "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/${{ env.PROJECT_NAME }}" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "deployment_configs": {
+                "production": {
+                  "d1_databases": {
+                    "DB": {
+                      "id": "${{ secrets.D1_DATABASE_ID }}"
+                    }
+                  },
+                  "kv_namespaces": {
+                    "KV": {
+                      "id": "${{ secrets.KV_NAMESPACE_ID }}"
+                    }
+                  }
+                }
+              }
+            }'
+          
+          echo ""
+          echo "✅ D1 和 KV 绑定已配置"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: 部署总结
         run: |
           echo "✅ 部署完成！"
