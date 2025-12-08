@@ -74,7 +74,7 @@ jobs:
       - name: 部署 Pages
         run: |
           echo "部署 Pages..."
-          wrangler pages deploy public --project-name=${{ env.PROJECT_NAME }}
+          wrangler pages deploy public --project-name=${{ env.PROJECT_NAME }} --branch=main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
