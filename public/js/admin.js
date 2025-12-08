@@ -1,3 +1,6 @@
+// API基础路径
+const API_BASE = '';  // 空字符串表示相对路径
+
 // 全局状态
 let sites = [];
 let categories = [];
