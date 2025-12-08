@@ -69,15 +69,16 @@ function renderCategories(categories) {
     const container = document.getElementById('categoriesList');
     container.innerHTML = '';
 
-    // 添加"全部"标签
-    const allTab = createCategoryTab('all', '全部', '#ff9a56', true);
-    container.appendChild(allTab);
-
-    // 添加其他分类
-    categories.forEach(category => {
-        const tab = createCategoryTab(category.id, category.name, category.color, false, category.icon);
+    // 添加分类，第一个默认选中
+    categories.forEach((category, index) => {
+        const tab = createCategoryTab(category.id, category.name, category.color, index === 0, category.icon);
         container.appendChild(tab);
     });
+
+    // 默认加载第一个分类的站点
+    if (categories.length > 0) {
+        loadSites(categories[0].id);
+    }
 }
 
 // 创建分类标签
