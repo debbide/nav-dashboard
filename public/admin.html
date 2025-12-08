@@ -7,6 +7,64 @@
     <title>管理后台 - 导航站</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .login-box {
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+        }
+
+        .login-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-box>p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1.5rem;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .login-error {
+            color: #ff6b6b;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -130,6 +188,7 @@
                         </table>
                     </div>
                 </div>
+
                 <!-- 背景设置面板 -->
                 <div id="backgroundPanel" class="content-panel">
                     <div class="panel-header">
@@ -175,7 +234,6 @@
                         </form>
                     </div>
                 </div>
-
 
             </section>
         </main>
