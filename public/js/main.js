@@ -1,5 +1,5 @@
 ﻿// 使用相对路径 - Workers 同时提供前端和 API
-const API_BASE = '';  // 空字符串表示相对路径
+const API_BASE = '';
 
 // ==================== 主要功能 ====================
 
@@ -121,7 +121,7 @@ function renderSites(sites) {
     });
 }
 
-// 创建站点卡片（横向布局）
+// 创建站点卡片（简化：只显示logo和名称，居中）
 function createSiteCard(site) {
     const card = document.createElement('a');
     card.href = site.url;
@@ -131,13 +131,9 @@ function createSiteCard(site) {
     const logo = site.logo || 'https://via.placeholder.com/64?text=' + encodeURIComponent(site.name.charAt(0));
 
     card.innerHTML = `
-    <img class="site-logo" src="${logo}" alt="${site.name}" onerror="this.src='https://via.placeholder.com/64?text=${encodeURIComponent(site.name.charAt(0))}'">
-    <div class="site-info">
-      <h3 class="site-name">${site.name}</h3>
-      <p class="site-desc">${site.description || ''}</p>
-      ${site.category_name ? `<span class="site-category" style="background: ${site.category_color || '#a78bfa'}30; color: ${site.category_color || '#a78bfa'}">${site.category_name}</span>` : ''}
-    </div>
-  `;
+        <img class="site-logo" src="${logo}" alt="${site.name}" onerror="this.src='https://via.placeholder.com/64?text=${encodeURIComponent(site.name.charAt(0))}'">
+        <span class="site-name">${site.name}</span>
+    `;
 
     return card;
 }
