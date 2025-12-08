@@ -358,16 +358,22 @@ body {
   }
 
   /* 搜索框 */
+  /* 搜索框 */
   .header-simple {
-    padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+    padding: 0.5rem;
     margin-bottom: 0.5rem;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .search-box-center {
-    max-width: 85%;
+    flex: 1;
+    max-width: none;
     padding: 0.4rem 0.6rem;
     margin-right: 0;
+    width: auto;
   }
 
   .search-box-center .search-engine-select {
@@ -377,7 +383,8 @@ body {
 
   .search-box-center .search-input {
     font-size: 0.85rem;
-    min-width: 60px;
+    min-width: 0;
+    /* 允许缩小 */
   }
 
   .search-box-center .search-btn {
@@ -387,11 +394,11 @@ body {
   }
 
   .admin-link {
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
+    position: static;
+    transform: none;
     font-size: 1.2rem;
+    padding: 0.5rem;
+    flex-shrink: 0;
   }
 }
 
