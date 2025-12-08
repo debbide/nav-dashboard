@@ -129,13 +129,14 @@ body {
 }
 
 
-/* ==================== 站点网格（6列居中） ==================== */
+/* ==================== 站点网格（6列左对齐） ==================== */
 .sites-grid {
   display: grid;
   grid-template-columns: repeat(6, 170px);
   gap: 1.5rem 1.25rem;
-  justify-content: center;
+  justify-content: start;
   padding: 0.5rem;
+  margin-top: 2rem;
 }
 
 /* ==================== 站点卡片（方正小卡片） ==================== */
