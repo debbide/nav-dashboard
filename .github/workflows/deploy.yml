@@ -71,10 +71,21 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: 检查并创建 Pages 项目
+        run: |
+          echo "检查 Pages 项目是否存在..."
+          
+          # 尝试创建项目（如果已存在会跳过）
+          wrangler pages project create ${{ env.PROJECT_NAME }} --production-branch=main || echo "项目可能已存在，继续..."
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        continue-on-error: true
+
       - name: 部署 Pages
         run: |
           echo "部署 Pages..."
-          wrangler pages deploy public --project-name=${{ env.PROJECT_NAME }} --branch=main
+          wrangler pages deploy public --project-name=${{ env.PROJECT_NAME }} --branch=main --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
