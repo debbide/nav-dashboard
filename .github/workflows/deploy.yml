@@ -60,11 +60,11 @@ jobs:
       - name: 初始化 D1 数据库
         run: |
           echo "初始化数据库..."
-          wrangler d1 execute nav-dashboard-db --file=./schema.sql --yes || echo "数据库可能已初始化"
+          wrangler d1 execute nav-dashboard-db --file=./schema.sql --remote --yes
+          echo "✅ 数据库初始化完成"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        continue-on-error: true
 
       - name: 部署 Workers
         run: |
