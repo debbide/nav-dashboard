@@ -129,18 +129,18 @@ body {
 }
 
 
-/* ==================== 站点网格（5列布局） ==================== */
+/* ==================== 站点网格（自动适应） ==================== */
 .sites-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   width: 100%;
 }
 
-/* ==================== 站点卡片（横向：logo左，名称右） ==================== */
+/* ==================== 站点卡片（方正小卡片） ==================== */
 .site-card {
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
   cursor: pointer;
   text-decoration: none;
   color: var(--text-primary);
@@ -149,6 +149,7 @@ body {
   gap: 0.6rem;
   transition: var(--transition);
   font-size: 0.9rem;
+  width: 140px;
 }
 
 .site-card:hover {
