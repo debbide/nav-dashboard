@@ -1,151 +1,258 @@
-# GitHub Actions 自动部署指南
+# GitHub Actions 部署指南
 
-## 🚀 部署步骤
+完整的 GitHub Secrets 配置和部署说明。
 
-### 1️⃣ 获取 Cloudflare API Token
+---
+
+## 📋 部署方案
+
+使用 **4 个 GitHub Secrets** 配置，实现推送代码即自动部署。
+
+---
+
+## 🔑 配置 Secrets
+
+### 访问配置页面
+
+https://github.com/debbide/nav-dashboard/settings/secrets/actions
+
+---
+
+## 1️⃣ CLOUDFLARE_API_TOKEN
+
+### 获取步骤：
 
 1. 访问 https://dash.cloudflare.com/profile/api-tokens
-2. 点击 **Create Token**
-3. 使用模板 **Edit Cloudflare Workers**
-4. 或者自定义权限：
-   - Account - Cloudflare Pages - Edit
-   - Account - D1 - Edit
-   - Account - R2 - Edit
-5. 点击 **Continue to summary** → **Create Token**
-6. **复制并保存** 这个 Token（只显示一次）
+2. 点击 **Create Token** 按钮
+3. 选择模板 **Edit Cloudflare Workers**
+4. 或者自定义权限（推荐）：
+   ```
+   ✅ Account - Workers Scripts - Edit
+   ✅ Account - Cloudflare Pages - Edit
+   ✅ Account - D1 - Edit
+   ✅ Account - Workers KV Storage - Edit
+   ```
+5. 点击 **Continue to summary**
+6. 点击 **Create Token**
+7. **立即复制 Token**（只显示一次！）
 
-### 2️⃣ 获取 Account ID
+### 添加到 GitHub：
+
+- Name: `CLOUDFLARE_API_TOKEN`
+- Secret: 粘贴刚才复制的 Token
+
+---
+
+## 2️⃣ CLOUDFLARE_ACCOUNT_ID
+
+### 获取步骤：
 
 1. 访问 https://dash.cloudflare.com
-2. 右侧侧边栏可以看到 **Account ID**
-3. 复制这个 ID
+2. 在右侧侧边栏找到 **Account ID**
+3. 点击复制图标
 
-### 3️⃣ 初始化 Git 仓库
+### 添加到 GitHub：
 
-```powershell
-# 进入项目目录
-cd e:\ck\docker\nav-dashboard
-
-# 初始化 Git
-git init
-
-# 添加所有文件
-git add .
-
-# 提交
-git commit -m "Initial commit - Cloudflare 导航站"
-```
-
-### 4️⃣ 创建 GitHub 仓库
-
-1. 访问 https://github.com/new
-2. 仓库名称：`nav-dashboard`（或其他名称）
-3. 设置为 **Public** 或 **Private**
-4. **不要**勾选 "Initialize this repository with a README"
-5. 点击 **Create repository**
-
-### 5️⃣ 推送代码到 GitHub
-
-```powershell
-# 添加远程仓库（替换为你的 GitHub 用户名）
-git remote add origin https://github.com/你的用户名/nav-dashboard.git
-
-# 重命名分支为 main
-git branch -M main
-
-# 推送代码
-git push -u origin main
-```
-
-### 6️⃣ 配置 GitHub Secrets
-
-1. 在 GitHub 仓库页面，点击 **Settings**
-2. 左侧菜单选择 **Secrets and variables** → **Actions**
-3. 点击 **New repository secret**
-
-添加以下两个 Secrets：
-
-**Secret 1: CLOUDFLARE_API_TOKEN**
-- Name: `CLOUDFLARE_API_TOKEN`
-- Value: 粘贴步骤 1 获取的 API Token
-
-**Secret 2: CLOUDFLARE_ACCOUNT_ID**
 - Name: `CLOUDFLARE_ACCOUNT_ID`
-- Value: 粘贴步骤 2 获取的 Account ID
+- Secret: 粘贴 Account ID（格式：`a1b2c3d4e5f6...`）
 
-### 7️⃣ 配置 Pages 项目绑定
+---
 
-在 Cloudflare Dashboard 配置（只需一次）：
+## 3️⃣ D1_DATABASE_ID
 
-1. 访问 https://dash.cloudflare.com → **Pages** → **nav-dashboard**
-2. 进入 **Settings** → **Functions**
-3. 添加 **D1 database binding**:
-   - Variable name: `DB`
-   - D1 database: `nav-dashboard-db`
-4. 添加 **R2 bucket binding**:
-   - Variable name: `BUCKET`
-   - R2 bucket: `nav-dashboard-images`
-5. 添加 **Environment variable**:
-   - Variable name: `R2_PUBLIC_ID`
-   - Value: `f249af155623469d94c5404717ea3888.r2.dev`
-6. 点击 **Save**
+### 获取步骤：
 
-### 8️⃣ 触发自动部署
+本地已创建数据库，直接使用：
 
-配置完成后，有两种方式触发部署：
+```
+110c9d6b-52d7-4d2c-876b-1c6ba08f22d4
+```
 
-**方式 1: 推送代码**
+如需查看所有数据库：
 ```powershell
-# 修改代码后
+npx wrangler d1 list
+```
+
+### 添加到 GitHub：
+
+- Name: `D1_DATABASE_ID`
+- Secret: `110c9d6b-52d7-4d2c-876b-1c6ba08f22d4`
+
+---
+
+## 4️⃣ KV_NAMESPACE_ID
+
+### 获取步骤：
+
+本地已创建命名空间，直接使用：
+
+```
+cb261e73c6414283a804222054699019
+```
+
+如需查看所有命名空间：
+```powershell
+npx wrangler kv:namespace list
+```
+
+### 添加到 GitHub：
+
+- Name: `KV_NAMESPACE_ID`
+- Secret: `cb261e73c6414283a804222054699019`
+
+---
+
+## ✅ 配置检查
+
+添加完成后，确认 Secrets 页面显示：
+
+- [x] CLOUDFLARE_API_TOKEN
+- [x] CLOUDFLARE_ACCOUNT_ID
+- [x] D1_DATABASE_ID
+- [x] KV_NAMESPACE_ID
+
+---
+
+## 🚀 开始部署
+
+### 第一次部署：
+
+1. 访问 https://github.com/debbide/nav-dashboard/actions
+2. 点击左侧 **Deploy to Cloudflare**
+3. 点击右上角 **Run workflow**
+4. 选择 `main` 分支
+5. 点击 **Run workflow** 开始部署
+
+### 查看部署进度：
+
+点击正在运行的 workflow，查看实时日志。
+
+### 部署成功标志：
+
+看到 `✅ 部署完成！` 消息。
+
+---
+
+## ⚙️ Pages 绑定配置（首次部署后）
+
+> **重要**：首次部署后需要在 Cloudflare Dashboard 配置一次 Pages 绑定
+
+### 配置步骤：
+
+1. 访问 https://dash.cloudflare.com
+2. 左侧菜单选择 **Pages**
+3. 点击项目 **nav-dashboard**
+4. 进入 **Settings** 标签
+5. 向下滚动到 **Functions** 部分
+6. 添加以下绑定：
+
+#### D1 Database Binding
+
+- 点击 **Add binding** (在 D1 database bindings 下)
+- Variable name: `DB`
+- D1 database: 选择 `nav-dashboard-db`
+- 点击 **Save**
+
+#### KV Namespace Binding
+
+- 点击 **Add binding** (在 KV namespace bindings 下)
+- Variable name: `KV`
+- KV namespace: 选择 ID 为 `cb261e73c6414283a804222054699019` 的命名空间
+- 点击 **Save**
+
+### 完成！
+
+配置保存后，Pages 会自动重新部署，几分钟后即可访问。
+
+---
+
+## 🌐 访问你的导航站
+
+部署成功后访问：
+
+- **主页**: https://nav-dashboard.pages.dev
+- **管理后台**: https://nav-dashboard.pages.dev/admin.html
+
+---
+
+## 🔄 日常使用
+
+配置完成后，以后的流程非常简单：
+
+```bash
+# 1. 修改代码
+# 2. 提交和推送
 git add .
 git commit -m "更新功能"
 git push
+
+# 3. 自动部署 ✨（无需任何操作）
 ```
 
-**方式 2: 手动触发**
-1. 在 GitHub 仓库页面，点击 **Actions**
-2. 选择 **Deploy to Cloudflare**
-3. 点击 **Run workflow**
-
-### 9️⃣ 查看部署状态
-
-1. 在 GitHub 仓库页面，点击 **Actions**
-2. 查看最新的 workflow run
-3. 等待部署完成 ✅
-
-### 🎉 完成！
-
-部署成功后访问：
-- 主页：https://nav-dashboard.pages.dev
-- 管理后台：https://nav-dashboard.pages.dev/admin.html
+GitHub Actions 会自动：
+- 检测代码推送
+- 更新配置文件
+- 部署 Workers
+- 部署 Pages
 
 ---
 
-## 📝 常见问题
+## 📊 部署状态
 
-### Q: Actions 失败显示权限错误？
-A: 检查 API Token 权限是否正确，需要包含 Pages 编辑权限
+查看部署历史：
+- https://github.com/debbide/nav-dashboard/actions
 
-### Q: 部署成功但页面显示错误？
-A: 确认 Pages 项目的 D1、R2 绑定已配置
-
-### Q: 如何更新代码？
-A: 直接修改代码并推送，Actions 会自动部署：
-```powershell
-git add .
-git commit -m "更新说明"
-git push
-```
+查看 Cloudflare 资源：
+- D1 数据库：https://dash.cloudflare.com → D1
+- KV 命名空间：https://dash.cloudflare.com → Workers → KV
+- Pages 项目：https://dash.cloudflare.com → Pages
 
 ---
 
-## 🔄 后续更新流程
+## 🐛 故障排查
 
-以后只需要：
-1. 修改代码
-2. `git add .`
-3. `git commit -m "说明"`
-4. `git push`
-5. 自动部署 ✨
+### 问题 1: Actions 失败 "Unauthorized"
 
-简单高效！
+**原因**：API Token 无效或权限不足
+
+**解决**：
+1. 重新创建 API Token
+2. 确保包含所有必要权限
+3. 更新 GitHub Secret
+
+---
+
+### 问题 2: Pages 显示 "Not Found"
+
+**原因**：未配置 Pages 绑定
+
+**解决**：
+按照上面的步骤配置 D1 和 KV 绑定
+
+---
+
+### 问题 3: 数据库初始化失败
+
+**原因**：数据库已存在或 ID 错误
+
+**解决**：
+1. 检查 D1_DATABASE_ID 是否正确
+2. 访问 Cloudflare Dashboard 验证数据库存在
+3. 可以忽略此错误（continue-on-error: true）
+
+---
+
+### 问题 4: 图片上传失败
+
+**原因**：KV 绑定未配置
+
+**解决**：
+确认 Pages 项目中已添加 KV 绑定
+
+---
+
+## 🎉 大功告成！
+
+现在你有了一个完全自动化部署的导航站！
+
+任何代码修改推送到 GitHub 后都会自动部署到 Cloudflare Pages 🚀
