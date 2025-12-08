@@ -166,6 +166,16 @@ async function handleAPI(request, env, pathname, corsHeaders) {
         if (method === 'PUT') return await updateBackgroundSetting(request, env, corsHeaders);
     }
 
+    // Password API
+    if (pathname === '/api/settings/password') {
+        if (method === 'GET') return await getPasswordSetting(env, corsHeaders);
+        if (method === 'PUT') return await updatePasswordSetting(request, env, corsHeaders);
+    }
+
+    if (pathname === '/api/auth/verify' && method === 'POST') {
+        return await verifyPassword(request, env, corsHeaders);
+    }
+
     if (pathname === '/api/upload' && method === 'POST') {
         return await uploadFile(request, env, corsHeaders);
     }
@@ -488,6 +498,71 @@ async function updateBackgroundSetting(request, env, headers) {
             .run();
 
         return jsonResponse({ message: '背景图更新成功', background_image }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 获取密码设置
+async function getPasswordSetting(env, headers) {
+    try {
+        const result = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('admin_password')
+            .first();
+
+        const password = result ? result.value : 'admin123';
+        return jsonResponse({ has_password: true }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 更新密码设置
+async function updatePasswordSetting(request, env, headers) {
+    try {
+        const { old_password, new_password } = await request.json();
+
+        if (!new_password || new_password.length < 4) {
+            return jsonResponse({ error: '新密码不能少于4位' }, 400, headers);
+        }
+
+        // 验证旧密码
+        const result = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('admin_password')
+            .first();
+
+        const currentPassword = result ? result.value : 'admin123';
+
+        if (old_password !== currentPassword) {
+            return jsonResponse({ error: '原密码错误' }, 401, headers);
+        }
+
+        await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+            .bind('admin_password', new_password)
+            .run();
+
+        return jsonResponse({ message: '密码修改成功' }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 验证密码
+async function verifyPassword(request, env, headers) {
+    try {
+        const { password } = await request.json();
+
+        const result = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('admin_password')
+            .first();
+
+        const currentPassword = result ? result.value : 'admin123';
+
+        if (password === currentPassword) {
+            return jsonResponse({ success: true }, 200, headers);
+        } else {
+            return jsonResponse({ success: false, error: '密码错误' }, 401, headers);
+        }
     } catch (error) {
         return jsonResponse({ error: error.message }, 500, headers);
     }

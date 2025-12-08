@@ -111,6 +111,40 @@
             gap: 0.5rem;
             color: white;
         }
+
+        /* 密码表单样式 */
+        .password-form {
+            max-width: 400px;
+        }
+
+        .password-form .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .password-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .password-msg {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .password-msg.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            display: block;
+        }
+
+        .password-msg.error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+            display: block;
+        }
     </style>
 </head>
 
@@ -149,6 +183,10 @@
                     <button class="nav-item" data-tab="background">
                         <span>🖼️</span>
                         <span>背景设置</span>
+                    </button>
+                    <button class="nav-item" data-tab="password">
+                        <span>🔑</span>
+                        <span>密码设置</span>
                     </button>
                 </nav>
             </aside>
@@ -272,6 +310,36 @@
                     </div>
                 </div>
 
+                <!-- 密码设置面板 -->
+                <div id="passwordPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>🔑 密码设置</h2>
+                    </div>
+                    <div class="table-container glass-effect" style="padding: 2rem;">
+                        <form id="passwordForm" class="password-form">
+                            <div class="form-group">
+                                <label for="oldPassword">原密码</label>
+                                <input type="password" id="oldPassword" class="form-input" placeholder="请输入原密码"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">新密码</label>
+                                <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（至少4位）"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">确认新密码</label>
+                                <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码"
+                                    required>
+                            </div>
+                            <div class="form-actions" style="margin-top: 1.5rem;">
+                                <button type="submit" class="btn-primary">💾 修改密码</button>
+                            </div>
+                            <div id="passwordMsg" class="password-msg"></div>
+                        </form>
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
@@ -375,16 +443,25 @@
     </div>
 
     <script>
-        const ADMIN_PASSWORD = 'admin123';
-
-        function checkPassword() {
+        // 密码验证 - 使用API
+        async function checkPassword() {
             const input = document.getElementById('adminPassword').value;
-            if (input === ADMIN_PASSWORD) {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                sessionStorage.setItem('adminLoggedIn', 'true');
-            } else {
-                document.getElementById('loginError').textContent = '密码错误，请重试';
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: input })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                } else {
+                    document.getElementById('loginError').textContent = '密码错误，请重试';
+                }
+            } catch (error) {
+                document.getElementById('loginError').textContent = '验证失败，请重试';
             }
         }
 
@@ -392,6 +469,49 @@
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
         }
+
+        // 密码修改表单
+        document.getElementById('passwordForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('passwordMsg');
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                msgEl.textContent = '两次输入的新密码不一致';
+                msgEl.className = 'password-msg error';
+                return;
+            }
+
+            if (newPassword.length < 4) {
+                msgEl.textContent = '新密码不能少于4位';
+                msgEl.className = 'password-msg error';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/settings/password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    msgEl.textContent = '密码修改成功！下次登录请使用新密码';
+                    msgEl.className = 'password-msg success';
+                    document.getElementById('passwordForm').reset();
+                    sessionStorage.removeItem('adminLoggedIn');
+                } else {
+                    msgEl.textContent = data.error || '修改失败';
+                    msgEl.className = 'password-msg error';
+                }
+            } catch (error) {
+                msgEl.textContent = '网络错误，请重试';
+                msgEl.className = 'password-msg error';
+            }
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="/js/admin.js"></script>
