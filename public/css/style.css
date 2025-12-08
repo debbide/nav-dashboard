@@ -380,14 +380,14 @@ body {
 
 .search-box-center .search-engine-select {
   border: none;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.3);
   outline: none;
   font-size: 0.9rem;
   color: var(--text-primary);
   cursor: pointer;
-  padding-right: 0.5rem;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
-  margin-right: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  margin-right: 0.75rem;
 }
 
 .search-box-center .search-input {
@@ -405,15 +405,18 @@ body {
 
 .search-box-center .search-btn {
   border: none;
-  background: transparent;
+  background: var(--warm-gradient);
   cursor: pointer;
-  font-size: 1.1rem;
-  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  color: white;
   transition: var(--transition);
 }
 
 .search-box-center .search-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(167, 139, 250, 0.4);
 }
 
 .admin-link {
