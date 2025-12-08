@@ -1,5 +1,5 @@
 export default {
-    async fetch(request, env) {
+    async fetch(request, env, ctx) {
         const url = new URL(request.url);
         const { pathname } = url;
 
@@ -21,42 +21,58 @@ export default {
                 return await handleAPI(request, env, pathname, corsHeaders);
             }
 
-            // 静态文件 - 使用 Workers Sites 自动处理
-            // 使用 env.__STATIC_CONTENT 访问静态资源
-            try {
-                const assetKey = pathname === '/' ? '/index.html' : pathname;
-                const asset = await env.__STATIC_CONTENT.get(assetKey, { type: 'stream' });
+            // 静态文件处理
+            return await serveStatic(pathname, env);
 
-                if (!asset) {
-                    // 如果找不到，尝试返回 index.html（用于 SPA）
-                    const indexAsset = await env.__STATIC_CONTENT.get('/index.html', { type: 'stream' });
-                    if (indexAsset) {
-                        return new Response(indexAsset, {
-                            headers: {
-                                'Content-Type': 'text/html;charset=UTF-8',
-                            },
-                        });
-                    }
-                    return new Response('Not Found', { status: 404 });
-                }
-
-                // 根据文件扩展名设置 Content-Type
-                const contentType = getContentType(assetKey);
-
-                return new Response(asset, {
-                    headers: {
-                        'Content-Type': contentType,
-                        'Cache-Control': 'public, max-age=3600',
-                    },
-                });
-            } catch (e) {
-                return new Response('Error loading asset: ' + e.message, { status: 500 });
-            }
         } catch (error) {
+            console.error('Error:', error);
             return jsonResponse({ success: false, message: error.message }, 500, corsHeaders);
         }
     },
 };
+
+// 提供静态文件
+async function serveStatic(pathname, env) {
+    try {
+        // 处理根路径
+        let assetPath = pathname === '/' ? '/index.html' : pathname;
+
+        // 移除开头的斜杠，Workers Sites 不需要
+        const key = assetPath.substring(1);
+
+        // 从 __STATIC_CONTENT 获取文件
+        const content = await env.__STATIC_CONTENT.get(key);
+
+        if (!content) {
+            // 尝试作为 SPA，返回 index.html
+            const indexContent = await env.__STATIC_CONTENT.get('index.html');
+            if (indexContent) {
+                return new Response(indexContent, {
+                    headers: {
+                        'Content-Type': 'text/html;charset=UTF-8',
+                        'Cache-Control': 'no-cache',
+                    },
+                });
+            }
+            return new Response('Not Found', { status: 404 });
+        }
+
+        // 确定 Content-Type
+        const contentType = getContentType(assetPath);
+
+        return new Response(content, {
+            headers: {
+                'Content-Type': contentType,
+                'Cache-Control': assetPath.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico)$/)
+                    ? 'public, max-age=31536000'
+                    : 'public, max-age=3600',
+            },
+        });
+    } catch (error) {
+        console.error('Static file error:', error);
+        return new Response('Error: ' + error.message, { status: 500 });
+    }
+}
 
 // 获取 Content-Type
 function getContentType(path) {
@@ -73,6 +89,9 @@ function getContentType(path) {
         'svg': 'image/svg+xml',
         'webp': 'image/webp',
         'ico': 'image/x-icon',
+        'woff': 'font/woff',
+        'woff2': 'font/woff2',
+        'ttf': 'font/ttf',
     };
     return types[ext] || 'application/octet-stream';
 }
@@ -118,12 +137,11 @@ async function handleAPI(request, env, pathname, corsHeaders) {
         return await getImage(filename, env, corsHeaders);
     }
 
-    return jsonResponse({ success: false, message: 'Not Found' }, 404, corsHeaders);
+    return jsonResponse({ success: false, message: 'API Not Found' }, 404, corsHeaders);
 }
 
 // ==================== 站点操作 ====================
 
-// 获取所有站点
 async function getSites(request, env, corsHeaders) {
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
@@ -151,7 +169,6 @@ async function getSites(request, env, corsHeaders) {
     return jsonResponse({ success: true, data: results }, 200, corsHeaders);
 }
 
-// 获取单个站点
 async function getSite(id, env, corsHeaders) {
     const { results } = await env.DB.prepare('SELECT * FROM sites WHERE id = ?').bind(id).all();
     if (results.length === 0) {
@@ -160,7 +177,6 @@ async function getSite(id, env, corsHeaders) {
     return jsonResponse({ success: true, data: results[0] }, 200, corsHeaders);
 }
 
-// 创建站点
 async function createSite(request, env, corsHeaders) {
     const data = await request.json();
     const { name, url, description, logo, category_id, sort_order } = data;
@@ -172,14 +188,7 @@ async function createSite(request, env, corsHeaders) {
     const result = await env.DB.prepare(`
     INSERT INTO sites (name, url, description, logo, category_id, sort_order) 
     VALUES (?, ?, ?, ?, ?, ?)
-  `).bind(
-        name,
-        url,
-        description || '',
-        logo || '',
-        category_id || null,
-        sort_order || 0
-    ).run();
+  `).bind(name, url, description || '', logo || '', category_id || null, sort_order || 0).run();
 
     return jsonResponse({
         success: true,
@@ -188,7 +197,6 @@ async function createSite(request, env, corsHeaders) {
     }, 200, corsHeaders);
 }
 
-// 更新站点
 async function updateSite(id, request, env, corsHeaders) {
     const data = await request.json();
     const { name, url, description, logo, category_id, sort_order } = data;
@@ -201,15 +209,7 @@ async function updateSite(id, request, env, corsHeaders) {
     UPDATE sites 
     SET name = ?, url = ?, description = ?, logo = ?, category_id = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).bind(
-        name,
-        url,
-        description || '',
-        logo || '',
-        category_id || null,
-        sort_order || 0,
-        id
-    ).run();
+  `).bind(name, url, description || '', logo || '', category_id || null, sort_order || 0, id).run();
 
     if (result.meta.changes === 0) {
         return jsonResponse({ success: false, message: '站点不存在' }, 404, corsHeaders);
@@ -218,7 +218,6 @@ async function updateSite(id, request, env, corsHeaders) {
     return jsonResponse({ success: true, message: '站点更新成功' }, 200, corsHeaders);
 }
 
-// 删除站点
 async function deleteSite(id, env, corsHeaders) {
     const result = await env.DB.prepare('DELETE FROM sites WHERE id = ?').bind(id).run();
 
@@ -231,7 +230,6 @@ async function deleteSite(id, env, corsHeaders) {
 
 // ==================== 分类操作 ====================
 
-// 获取所有分类
 async function getCategories(env, corsHeaders) {
     const { results } = await env.DB.prepare(`
     SELECT c.*, 
@@ -243,7 +241,6 @@ async function getCategories(env, corsHeaders) {
     return jsonResponse({ success: true, data: results }, 200, corsHeaders);
 }
 
-// 创建分类
 async function createCategory(request, env, corsHeaders) {
     const data = await request.json();
     const { name, icon, color, sort_order } = data;
@@ -255,12 +252,7 @@ async function createCategory(request, env, corsHeaders) {
     const result = await env.DB.prepare(`
     INSERT INTO categories (name, icon, color, sort_order) 
     VALUES (?, ?, ?, ?)
-  `).bind(
-        name,
-        icon || '',
-        color || '#ff9a56',
-        sort_order || 0
-    ).run();
+  `).bind(name, icon || '', color || '#ff9a56', sort_order || 0).run();
 
     return jsonResponse({
         success: true,
@@ -269,7 +261,6 @@ async function createCategory(request, env, corsHeaders) {
     }, 200, corsHeaders);
 }
 
-// 更新分类
 async function updateCategory(id, request, env, corsHeaders) {
     const data = await request.json();
     const { name, icon, color, sort_order } = data;
@@ -282,13 +273,7 @@ async function updateCategory(id, request, env, corsHeaders) {
     UPDATE categories 
     SET name = ?, icon = ?, color = ?, sort_order = ?
     WHERE id = ?
-  `).bind(
-        name,
-        icon || '',
-        color || '#ff9a56',
-        sort_order || 0,
-        id
-    ).run();
+  `).bind(name, icon || '', color || '#ff9a56', sort_order || 0, id).run();
 
     if (result.meta.changes === 0) {
         return jsonResponse({ success: false, message: '分类不存在' }, 404, corsHeaders);
@@ -297,9 +282,7 @@ async function updateCategory(id, request, env, corsHeaders) {
     return jsonResponse({ success: true, message: '分类更新成功' }, 200, corsHeaders);
 }
 
-// 删除分类
 async function deleteCategory(id, env, corsHeaders) {
-    // 检查是否有站点使用此分类
     const { results } = await env.DB.prepare('SELECT COUNT(*) as count FROM sites WHERE category_id = ?').bind(id).all();
     if (results[0].count > 0) {
         return jsonResponse({
@@ -317,7 +300,7 @@ async function deleteCategory(id, env, corsHeaders) {
     return jsonResponse({ success: true, message: '分类删除成功' }, 200, corsHeaders);
 }
 
-// ==================== 文件上传（KV）====================
+// ==================== 文件上传 ====================
 
 async function uploadFile(request, env, corsHeaders) {
     try {
@@ -328,28 +311,21 @@ async function uploadFile(request, env, corsHeaders) {
             return jsonResponse({ success: false, message: '没有上传文件' }, 400, corsHeaders);
         }
 
-        // 检查文件类型
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp', 'image/x-icon'];
         if (!allowedTypes.includes(file.type)) {
             return jsonResponse({ success: false, message: '只支持图片文件' }, 400, corsHeaders);
         }
 
-        // 检查文件大小（限制 2MB）
         if (file.size > 2 * 1024 * 1024) {
             return jsonResponse({ success: false, message: '文件大小不能超过 2MB' }, 400, corsHeaders);
         }
 
-        // 生成唯一文件名
         const ext = file.name.split('.').pop();
         const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
-        // 读取文件为 ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
-
-        // 转换为 base64
         const base64Data = arrayBufferToBase64(arrayBuffer);
 
-        // 保存到 KV
         await env.KV.put(`image:${filename}`, base64Data, {
             metadata: {
                 contentType: file.type,
@@ -369,7 +345,6 @@ async function uploadFile(request, env, corsHeaders) {
     }
 }
 
-// 获取图片
 async function getImage(filename, env, corsHeaders) {
     try {
         const { value, metadata } = await env.KV.getWithMetadata(`image:${filename}`);
@@ -378,7 +353,6 @@ async function getImage(filename, env, corsHeaders) {
             return new Response('Image not found', { status: 404 });
         }
 
-        // 将 base64 转回 ArrayBuffer
         const arrayBuffer = base64ToArrayBuffer(value);
 
         return new Response(arrayBuffer, {
@@ -405,7 +379,6 @@ function jsonResponse(data, status = 200, headers = {}) {
     });
 }
 
-// ArrayBuffer 转 Base64
 function arrayBufferToBase64(buffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);
@@ -415,7 +388,6 @@ function arrayBufferToBase64(buffer) {
     return btoa(binary);
 }
 
-// Base64 转 ArrayBuffer
 function base64ToArrayBuffer(base64) {
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
