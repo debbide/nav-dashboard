@@ -139,16 +139,16 @@ body {
 
 /* ==================== 站点卡片（横向：logo左，名称右） ==================== */
 .site-card {
-  border-radius: var(--radius-md);
-  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
   text-decoration: none;
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   transition: var(--transition);
-  min-width: 120px;
+  font-size: 0.85rem;
 }
 
 .site-card:hover {
@@ -157,8 +157,8 @@ body {
 }
 
 .site-logo {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
