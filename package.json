@@ -1,0 +1,23 @@
+{
+  "name": "nav-dashboard",
+  "version": "1.0.0",
+  "description": "卡片式导航站点 - 磨砂玻璃风格 - Cloudflare 版本",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "pages:dev": "wrangler pages dev public",
+    "pages:deploy": "wrangler pages deploy public"
+  },
+  "keywords": [
+    "navigation",
+    "dashboard",
+    "glassmorphism",
+    "cloudflare"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

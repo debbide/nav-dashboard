@@ -1,0 +1,22 @@
+name = "nav-dashboard"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1 数据库绑定
+[[d1_databases]]
+binding = "DB"
+database_name = "nav-dashboard-db"
+database_id = "110c9d6b-52d7-4d2c-876b-1c6ba08f22d4"  # 需要替换
+
+# R2 存储桶绑定
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "nav-dashboard-images"
+
+# 环境变量
+[vars]
+R2_PUBLIC_ID = "f249af155623469d94c5404717ea3888.r2.dev"  # 需要替换为您的 R2 公共域名 ID
+
+# Pages 配置
+pages_build_output_dir = "public"
+

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 导航站</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- 头部 -->
+        <header class="header glass-effect">
+            <div class="header-content">
+                <h1 class="logo">
+                    <span class="logo-icon">⚙️</span>
+                    <span class="logo-text">管理后台</span>
+                </h1>
+                <a href="/" class="admin-btn glass-effect">
+                    <span>🏠</span>
+                    <span>返回首页</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="admin-main">
+
+            <!-- 左侧菜单 -->
+            <aside class="admin-sidebar glass-effect">
+                <nav class="admin-nav">
+                    <button class="nav-item active" data-tab="sites">
+                        <span>🌐</span>
+                        <span>站点管理</span>
+                    </button>
+                    <button class="nav-item" data-tab="categories">
+                        <span>📁</span>
+                        <span>分类管理</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- 右侧内容 -->
+            <section class="admin-content">
+
+                <!-- 站点管理面板 -->
+                <div id="sitesPanel" class="content-panel active">
+                    <div class="panel-header">
+                        <h2>站点管理</h2>
+                        <button class="btn-primary" onclick="openSiteModal()">
+                            <span>➕</span>
+                            <span>添加站点</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Logo</th>
+                                    <th>名称</th>
+                                    <th>URL</th>
+                                    <th>分类</th>
+                                    <th>描述</th>
+                                    <th>排序</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sitesTableBody">
+                                <tr>
+                                    <td colspan="7" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 分类管理面板 -->
+                <div id="categoriesPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>分类管理</h2>
+                        <button class="btn-primary" onclick="openCategoryModal()">
+                            <span>➕</span>
+                            <span>添加分类</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>图标</th>
+                                    <th>名称</th>
+                                    <th>颜色</th>
+                                    <th>站点数</th>
+                                    <th>排序</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- 站点模态框 -->
+    <div id="siteModal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="siteModalTitle">添加站点</h3>
+                <button class="modal-close" onclick="closeSiteModal()">✕</button>
+            </div>
+
+            <form id="siteForm" class="modal-body">
+                <input type="hidden" id="siteId">
+
+                <div class="form-group">
+                    <label for="siteName">站点名称 *</label>
+                    <input type="text" id="siteName" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteUrl">站点 URL *</label>
+                    <input type="url" id="siteUrl" class="form-input" placeholder="https://example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteDescription">描述</label>
+                    <textarea id="siteDescription" class="form-input" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteCategory">分类</label>
+                    <select id="siteCategory" class="form-input">
+                        <option value="">无分类</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Logo</label>
+                    <div class="logo-input-group">
+                        <input type="text" id="siteLogo" class="form-input" placeholder="输入远程URL或上传本地图片">
+                        <label class="btn-upload">
+                            <input type="file" id="logoUpload" accept="image/*" style="display: none;"
+                                onchange="handleLogoUpload(event)">
+                            <span>📁 上传</span>
+                        </label>
+                    </div>
+                    <div id="logoPreview" class="logo-preview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteSortOrder">排序</label>
+                    <input type="number" id="siteSortOrder" class="form-input" value="0" min="0">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeSiteModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 分类模态框 -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="categoryModalTitle">添加分类</h3>
+                <button class="modal-close" onclick="closeCategoryModal()">✕</button>
+            </div>
+
+            <form id="categoryForm" class="modal-body">
+                <input type="hidden" id="categoryId">
+
+                <div class="form-group">
+                    <label for="categoryName">分类名称 *</label>
+                    <input type="text" id="categoryName" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryIcon">图标（Emoji）</label>
+                    <input type="text" id="categoryIcon" class="form-input" placeholder="🌐">
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryColor">颜色</label>
+                    <input type="color" id="categoryColor" class="form-input color-input" value="#ff9a56">
+                </div>
+
+                <div class="form-group">
+                    <label for="categorySortOrder">排序</label>
+                    <input type="number" id="categorySortOrder" class="form-input" value="0" min="0">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeCategoryModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+
+</html>

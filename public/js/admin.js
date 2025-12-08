@@ -1,0 +1,432 @@
+// 全局状态
+let sites = [];
+let categories = [];
+let currentTab = 'sites';
+let editingSiteId = null;
+let editingCategoryId = null;
+
+// DOM 加载完成后初始化
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+});
+
+// 初始化
+async function init() {
+    // 绑定标签切换
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            switchTab(item.dataset.tab);
+        });
+    });
+
+    // 绑定表单提交
+    document.getElementById('siteForm').addEventListener('submit', handleSiteSubmit);
+    document.getElementById('categoryForm').addEventListener('submit', handleCategorySubmit);
+
+    // 监听 Logo URL 输入变化
+    document.getElementById('siteLogo').addEventListener('input', (e) => {
+        updateLogoPreview(e.target.value);
+    });
+
+    // 加载数据
+    await loadCategories();
+    await loadSites();
+}
+
+// 切换标签页
+function switchTab(tab) {
+    currentTab = tab;
+
+    // 更新导航状态
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tab === tab);
+    });
+
+    // 更新面板显示
+    document.querySelectorAll('.content-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `${tab}Panel`);
+    });
+}
+
+// ==================== 站点管理 ====================
+
+// 加载站点列表
+async function loadSites() {
+    try {
+        const response = await fetch('/api/sites');
+        const result = await response.json();
+
+        if (result.success) {
+            sites = result.data;
+            renderSitesTable();
+        }
+    } catch (error) {
+        console.error('加载站点失败:', error);
+        showNotification('加载站点失败', 'error');
+    }
+}
+
+// 渲染站点表格
+function renderSitesTable() {
+    const tbody = document.getElementById('sitesTableBody');
+
+    if (sites.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">暂无站点数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = sites.map(site => `
+    <tr>
+      <td>
+        <img src="${site.logo || getDefaultLogo(site.url)}" 
+             alt="${site.name}" 
+             class="table-logo"
+             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><text y=%2224%22 font-size=%2224%22>🌐</text></svg>'">
+      </td>
+      <td>${escapeHtml(site.name)}</td>
+      <td><a href="${site.url}" target="_blank" style="color: var(--primary-color)">${getDomain(site.url)}</a></td>
+      <td>${site.category_name || '-'}</td>
+      <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(site.description || '-')}</td>
+      <td>${site.sort_order}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-icon" onclick="editSite(${site.id})" title="编辑">✏️</button>
+          <button class="btn-icon danger" onclick="deleteSite(${site.id})" title="删除">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 打开站点模态框（新建）
+function openSiteModal() {
+    editingSiteId = null;
+    document.getElementById('siteModalTitle').textContent = '添加站点';
+    document.getElementById('siteForm').reset();
+    document.getElementById('siteId').value = '';
+
+    // 填充分类选择器
+    populateCategorySelect();
+
+    // 清空预览
+    document.getElementById('logoPreview').classList.remove('active');
+
+    document.getElementById('siteModal').classList.add('active');
+}
+
+// 编辑站点
+function editSite(id) {
+    const site = sites.find(s => s.id === id);
+    if (!site) return;
+
+    editingSiteId = id;
+    document.getElementById('siteModalTitle').textContent = '编辑站点';
+    document.getElementById('siteId').value = id;
+    document.getElementById('siteName').value = site.name;
+    document.getElementById('siteUrl').value = site.url;
+    document.getElementById('siteDescription').value = site.description || '';
+    document.getElementById('siteCategory').value = site.category_id || '';
+    document.getElementById('siteLogo').value = site.logo || '';
+    document.getElementById('siteSortOrder').value = site.sort_order;
+
+    // 填充分类选择器
+    populateCategorySelect();
+
+    // 更新预览
+    updateLogoPreview(site.logo);
+
+    document.getElementById('siteModal').classList.add('active');
+}
+
+// 关闭站点模态框
+function closeSiteModal() {
+    document.getElementById('siteModal').classList.remove('active');
+    editingSiteId = null;
+}
+
+// 填充分类选择器
+function populateCategorySelect() {
+    const select = document.getElementById('siteCategory');
+    const currentValue = select.value;
+
+    select.innerHTML = '<option value="">无分类</option>' +
+        categories.map(cat => `<option value="${cat.id}">${cat.icon || ''} ${cat.name}</option>`).join('');
+
+    select.value = currentValue;
+}
+
+// 处理站点表单提交
+async function handleSiteSubmit(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('siteName').value,
+        url: document.getElementById('siteUrl').value,
+        description: document.getElementById('siteDescription').value,
+        logo: document.getElementById('siteLogo').value,
+        category_id: document.getElementById('siteCategory').value || null,
+        sort_order: parseInt(document.getElementById('siteSortOrder').value) || 0
+    };
+
+    try {
+        const url = editingSiteId ? `/api/sites/${editingSiteId}` : '/api/sites';
+        const method = editingSiteId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(editingSiteId ? '站点更新成功' : '站点添加成功', 'success');
+            closeSiteModal();
+            await loadSites();
+        } else {
+            showNotification(result.message || '操作失败', 'error');
+        }
+    } catch (error) {
+        console.error('保存站点失败:', error);
+        showNotification('保存失败', 'error');
+    }
+}
+
+// 删除站点
+async function deleteSite(id) {
+    if (!confirm('确定要删除这个站点吗？')) return;
+
+    try {
+        const response = await fetch(`/api/sites/${id}`, { method: 'DELETE' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('站点删除成功', 'success');
+            await loadSites();
+        } else {
+            showNotification(result.message || '删除失败', 'error');
+        }
+    } catch (error) {
+        console.error('删除站点失败:', error);
+        showNotification('删除失败', 'error');
+    }
+}
+
+// ==================== 分类管理 ====================
+
+// 加载分类列表
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        const result = await response.json();
+
+        if (result.success) {
+            categories = result.data;
+            renderCategoriesTable();
+        }
+    } catch (error) {
+        console.error('加载分类失败:', error);
+        showNotification('加载分类失败', 'error');
+    }
+}
+
+// 渲染分类表格
+function renderCategoriesTable() {
+    const tbody = document.getElementById('categoriesTableBody');
+
+    if (categories.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">暂无分类数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = categories.map(cat => `
+    <tr>
+      <td class="table-icon">${cat.icon || '-'}</td>
+      <td>${escapeHtml(cat.name)}</td>
+      <td>
+        <span class="color-badge" style="background-color: ${cat.color}"></span>
+        <span style="margin-left: 0.5rem;">${cat.color}</span>
+      </td>
+      <td>${cat.sites_count || 0}</td>
+      <td>${cat.sort_order}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-icon" onclick="editCategory(${cat.id})" title="编辑">✏️</button>
+          <button class="btn-icon danger" onclick="deleteCategory(${cat.id})" title="删除">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 打开分类模态框（新建）
+function openCategoryModal() {
+    editingCategoryId = null;
+    document.getElementById('categoryModalTitle').textContent = '添加分类';
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryColor').value = '#ff9a56';
+
+    document.getElementById('categoryModal').classList.add('active');
+}
+
+// 编辑分类
+function editCategory(id) {
+    const category = categories.find(c => c.id === id);
+    if (!category) return;
+
+    editingCategoryId = id;
+    document.getElementById('categoryModalTitle').textContent = '编辑分类';
+    document.getElementById('categoryId').value = id;
+    document.getElementById('categoryName').value = category.name;
+    document.getElementById('categoryIcon').value = category.icon || '';
+    document.getElementById('categoryColor').value = category.color || '#ff9a56';
+    document.getElementById('categorySortOrder').value = category.sort_order;
+
+    document.getElementById('categoryModal').classList.add('active');
+}
+
+// 关闭分类模态框
+function closeCategoryModal() {
+    document.getElementById('categoryModal').classList.remove('active');
+    editingCategoryId = null;
+}
+
+// 处理分类表单提交
+async function handleCategorySubmit(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('categoryName').value,
+        icon: document.getElementById('categoryIcon').value,
+        color: document.getElementById('categoryColor').value,
+        sort_order: parseInt(document.getElementById('categorySortOrder').value) || 0
+    };
+
+    try {
+        const url = editingCategoryId ? `/api/categories/${editingCategoryId}` : '/api/categories';
+        const method = editingCategoryId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(editingCategoryId ? '分类更新成功' : '分类添加成功', 'success');
+            closeCategoryModal();
+            await loadCategories();
+            // 重新加载站点以更新分类信息
+            await loadSites();
+        } else {
+            showNotification(result.message || '操作失败', 'error');
+        }
+    } catch (error) {
+        console.error('保存分类失败:', error);
+        showNotification('保存失败', 'error');
+    }
+}
+
+// 删除分类
+async function deleteCategory(id) {
+    if (!confirm('确定要删除这个分类吗？')) return;
+
+    try {
+        const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('分类删除成功', 'success');
+            await loadCategories();
+            await loadSites();
+        } else {
+            showNotification(result.message || '删除失败', 'error');
+        }
+    } catch (error) {
+        console.error('删除分类失败:', error);
+        showNotification('删除失败', 'error');
+    }
+}
+
+// ==================== 文件上传 ====================
+
+// 处理 Logo 上传
+async function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            const logoUrl = result.data.url;
+            document.getElementById('siteLogo').value = logoUrl;
+            updateLogoPreview(logoUrl);
+            showNotification('图片上传成功', 'success');
+        } else {
+            showNotification(result.message || '上传失败', 'error');
+        }
+    } catch (error) {
+        console.error('上传图片失败:', error);
+        showNotification('上传失败', 'error');
+    }
+}
+
+// 更新 Logo 预览
+function updateLogoPreview(url) {
+    const preview = document.getElementById('logoPreview');
+
+    if (url && url.trim()) {
+        preview.innerHTML = `<img src="${url}" alt="Logo Preview" onerror="this.style.display='none'">`;
+        preview.classList.add('active');
+    } else {
+        preview.classList.remove('active');
+    }
+}
+
+// ==================== 工具函数 ====================
+
+// 获取默认 logo
+function getDefaultLogo(url) {
+    try {
+        const domain = new URL(url).origin;
+        return `${domain}/favicon.ico`;
+    } catch {
+        return 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><text y=%2224%22 font-size=%2224%22>🌐</text></svg>';
+    }
+}
+
+// 获取域名
+function getDomain(url) {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        return url;
+    }
+}
+
+// HTML 转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 显示通知
+function showNotification(message, type = 'info') {
+    // 简单的 alert 实现，后续可以改为更美观的 toast
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    alert(`${icon} ${message}`);
+}

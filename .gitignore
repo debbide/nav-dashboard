@@ -1,0 +1,39 @@
+# 忽略 Node.js 相关文件
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# 忽略环境和配置文件
+.env
+.env.local
+.dev.vars
+
+# 忽略 Wrangler 相关
+.wrangler/
+wrangler.toml.local
+
+# 忽略编辑器配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 忽略系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略旧的 Docker 文件（如果清理）
+Dockerfile
+docker-compose.yml
+.dockerignore
+server.js
+database.js
+
+# 忽略备份和临时文件
+*.bak
+*.tmp
+*.log
+.git/

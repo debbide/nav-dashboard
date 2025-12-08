@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导航站 - 磨砂玻璃风格</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- 主容器 -->
+  <div class="container">
+    
+    <!-- 头部区域 -->
+    <header class="header glass-effect">
+      <div class="header-content">
+        <h1 class="logo">
+          <span class="logo-icon">🧭</span>
+          <span class="logo-text">导航站</span>
+        </h1>
+        
+        <!-- 搜索框 -->
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="搜索站点..."
+          >
+          <span class="search-icon">🔍</span>
+        </div>
+        
+        <a href="/admin.html" class="admin-btn glass-effect">
+          <span>⚙️</span>
+          <span>管理</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- 分类标签 -->
+    <div class="categories-container">
+      <div id="categoriesList" class="categories-list">
+        <button class="category-tab glass-effect active" data-category="all">
+          全部
+        </button>
+        <!-- 动态加载分类 -->
+      </div>
+    </div>
+
+    <!-- 站点卡片网格 -->
+    <main class="main-content">
+      <div id="sitesGrid" class="sites-grid">
+        <!-- Loading 状态 -->
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <p>加载中...</p>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-icon">📭</div>
+        <h3>暂无站点</h3>
+        <p>还没有添加任何站点，去后台添加一些吧！</p>
+        <a href="/admin.html" class="btn-primary">前往管理后台</a>
+      </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <p>© 2024 导航站 | 简洁 · 优雅 · 高效</p>
+    </footer>
+  </div>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
