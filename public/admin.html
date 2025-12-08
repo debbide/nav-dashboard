@@ -24,75 +24,99 @@
                     <span>返回首页</span>
                 </a>
             </div>
-            <div class="panel-header">
-                <h2>站点管理</h2>
-                <button class="btn-primary" onclick="openSiteModal()">
-                    <span>➕</span>
-                    <span>添加站点</span>
-                </button>
-            </div>
+        </header>
 
-            <div class="table-container glass-effect">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Logo</th>
-                            <th>名称</th>
-                            <th>URL</th>
-                            <th>分类</th>
-                            <th>描述</th>
-                            <th>排序</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sitesTableBody">
-                        <tr>
-                            <td colspan="7" class="loading-row">
-                                <div class="loading-spinner"></div>
-                                <span>加载中...</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-    </div>
+        <!-- 主内容区 -->
+        <main class="admin-main">
 
-    <!-- 分类管理面板 -->
-    <div id="categoriesPanel" class="content-panel">
-        <div class="panel-header">
-            <h2>分类管理</h2>
-            <button class="btn-primary" onclick="openCategoryModal()">
-                <span>➕</span>
-                <span>添加分类</span>
-            </button>
-        </div>
+            <!-- 左侧菜单 -->
+            <aside class="admin-sidebar glass-effect">
+                <nav class="admin-nav">
+                    <button class="nav-item active" data-tab="sites">
+                        <span>🌐</span>
+                        <span>站点管理</span>
+                    </button>
+                    <button class="nav-item" data-tab="categories">
+                        <span>📁</span>
+                        <span>分类管理</span>
+                    </button>
+                </nav>
+            </aside>
 
-        <div class="table-container glass-effect">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>图标</th>
-                        <th>名称</th>
-                        <th>颜色</th>
-                        <th>站点数</th>
-                        <th>排序</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="categoriesTableBody">
-                    <tr>
-                        <td colspan="6" class="loading-row">
-                            <div class="loading-spinner"></div>
-                            <span>加载中...</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+            <!-- 右侧内容 -->
+            <section class="admin-content">
 
-    </section>
-    </main>
+                <!-- 站点管理面板 -->
+                <div id="sitesPanel" class="content-panel active">
+                    <div class="panel-header">
+                        <h2>站点管理</h2>
+                        <button class="btn-primary" onclick="openSiteModal()">
+                            <span>➕</span>
+                            <span>添加站点</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Logo</th>
+                                    <th>名称</th>
+                                    <th>URL</th>
+                                    <th>分类</th>
+                                    <th>描述</th>
+                                    <th>排序</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sitesTableBody">
+                                <tr>
+                                    <td colspan="7" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 分类管理面板 -->
+                <div id="categoriesPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>分类管理</h2>
+                        <button class="btn-primary" onclick="openCategoryModal()">
+                            <span>➕</span>
+                            <span>添加分类</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>图标</th>
+                                    <th>名称</th>
+                                    <th>颜色</th>
+                                    <th>站点数</th>
+                                    <th>排序</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+        </main>
     </div>
 
     <!-- 站点模态框 -->
