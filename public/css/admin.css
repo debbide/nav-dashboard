@@ -2,27 +2,94 @@
 
 .admin-main {
     display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
 
-    /* ==================== 内容面板 ==================== */
-    .admin-content {
-        min-height: 500px;
-    }
+/* ==================== 侧边栏 ==================== */
+.admin-sidebar {
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    height: fit-content;
+    position: sticky;
+    top: var(--spacing-md);
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
 
-    .content-panel {
-        display: none;
-    }
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
 
-    .content-panel.active {
-        display: block;
-    }
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+    backdrop-filter: blur(5px);
+}
 
-    .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-lg);
-    }
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(4px);
+}
 
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item span:first-child {
+    font-size: 1.2rem;
+}
+
+/* ==================== 内容面板 ==================== */
+.admin-content {
+    min-height: 500px;
+}
+
+.content-panel {
+    display: none;
+}
+
+.content-panel.active {
+    display: block;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.panel-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* ==================== 表格样式 ==================== */
+.table-container {
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    overflow-x: auto;
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+
+.data-table {
+    width: 100%;
     border-collapse: separate;
     border-spacing: 0 0.6rem;
 }
