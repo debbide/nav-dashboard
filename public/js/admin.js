@@ -31,10 +31,16 @@ async function init() {
         updateLogoPreview(e.target.value);
     });
 
-    // 监听站点URL变化，自动获取logo
-    document.getElementById('siteUrl').addEventListener('blur', (e) => {
-        autoFetchLogo(e.target.value);
-    });
+    // 动态添加"获取Logo"按钮
+    const logoInputGroup = document.querySelector('.logo-input-group');
+    if (logoInputGroup) {
+        const fetchBtn = document.createElement('button');
+        fetchBtn.type = 'button';
+        fetchBtn.className = 'btn-upload';
+        fetchBtn.innerHTML = '<span>🔍 获取</span>';
+        fetchBtn.onclick = autoFetchLogo;
+        logoInputGroup.insertBefore(fetchBtn, logoInputGroup.querySelector('.btn-upload'));
+    }
 
     // 加载数据
     await loadCategories();
@@ -470,22 +476,25 @@ function getDomain(url) {
     }
 }
 
-// 自动获取网站logo
-function autoFetchLogo(url) {
-    // 如果logo已经手动填写，不要覆盖
+// 自动获取网站Logo
+function autoFetchLogo() {
+    const urlInput = document.getElementById('siteUrl');
     const logoInput = document.getElementById('siteLogo');
-    if (logoInput.value.trim()) return;
+    const url = urlInput.value.trim();
+
+    if (!url) {
+        showNotification('请先输入站点URL', 'error');
+        return;
+    }
 
     try {
         const domain = new URL(url).hostname;
-        // 使用Google Favicon API获取高清logo
         const googleFavicon = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
-
-        // 设置logo URL
         logoInput.value = googleFavicon;
         updateLogoPreview(googleFavicon);
+        showNotification('Logo获取成功', 'success');
     } catch {
-        // URL无效时不做任何事
+        showNotification('URL格式无效', 'error');
     }
 }
 
