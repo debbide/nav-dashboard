@@ -140,15 +140,15 @@ body {
 /* ==================== 站点卡片（横向：logo左，名称右） ==================== */
 .site-card {
   border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 1.2rem;
   cursor: pointer;
   text-decoration: none;
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   transition: var(--transition);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .site-card:hover {
