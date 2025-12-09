@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>导航站</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=6">
+  <link rel="stylesheet" href="/css/style.css?v=7">
 </head>
 
 <body>
@@ -26,7 +26,11 @@
             <img src="https://github.com/favicon.ico" alt="GitHub">
           </button>
         </div>
-        <div class="search-input-wrapper"><input type="text" id="searchInput" class="search-input" placeholder=" " autocomplete="off"><label for="searchInput" class="search-label">搜索站点...</label><div id="searchSuggestions" class="search-suggestions"></div></div>
+        <div class="search-input-wrapper">
+          <input type="text" id="searchInput" class="search-input" placeholder=" " autocomplete="off">
+          <label for="searchInput" class="search-label">搜索站点...</label>
+          <div id="searchSuggestions" class="search-suggestions"></div>
+        </div>
         <button id="searchBtn" class="search-btn">🔍</button>
       </div>
       <a href="/admin.html" class="admin-link" title="管理">⚙️</a>
@@ -74,22 +78,26 @@
   <!-- IP Info Card -->
   <div id="ipCard" class="ip-card glass-effect" style="display: none;">
     <div class="ip-header">
-      <span class="ip-title">👋 欢迎访问</span>
+      <span class="ip-greeting" id="ipGreeting">👋 欢迎光临</span>
       <button class="ip-close" onclick="closeIpCard()">×</button>
     </div>
-    <div class="ip-content">
-      <div class="ip-row">
-        <span class="ip-icon">📍</span>
-        <span id="ipLocation">Loading...</span>
+    <div class="ip-stats">
+      <span id="visitCount">第 1 次访问</span>
+    </div>
+    <div class="ip-content-compact">
+      <div class="ip-info-row">
+        <span class="ip-icon bounce">📍</span>
+        <span id="ipLocation">加载中...</span>
       </div>
-      <div class="ip-row">
-        <span class="ip-icon">🌐</span>
+      <div class="ip-info-row">
+        <span class="ip-icon pulse">🌐</span>
         <span id="ipAddress">...</span>
       </div>
-      <div class="ip-row isp-row">
-        <span class="ip-icon">🏢</span>
-        <span id="ipIsp">...</span>
-      </div>
+    </div>
+    <div class="ip-weather" id="ipWeather">
+      <span class="weather-icon">🌤️</span>
+      <span class="weather-temp" id="weatherTemp">--°C</span>
+      <span class="weather-desc" id="weatherDesc">获取天气中...</span>
     </div>
   </div>
 
@@ -97,5 +105,3 @@
 </body>
 
 </html>
-
-
