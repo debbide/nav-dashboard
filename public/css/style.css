@@ -965,3 +965,109 @@ body {
   font-size: 0.75rem;
 }
 
+
+/* ==================== 骨架屏加载 ==================== */
+.skeleton-card {
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 170px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 25%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+.skeleton-text {
+  flex: 1;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 25%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ==================== 暗色模式 ==================== */
+.dark-mode {
+  --text-primary: #e2e8f0;
+  --text-secondary: rgba(226, 232, 240, 0.85);
+  --text-muted: rgba(226, 232, 240, 0.6);
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(71, 85, 105, 0.5);
+}
+
+.dark-mode body {
+  background-color: #0f172a;
+}
+
+.dark-mode .ip-card,
+.dark-mode .search-suggestions {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+.dark-mode .ip-weather {
+  background: rgba(51, 65, 85, 0.5);
+}
+
+.dark-mode .ip-greeting {
+  color: #e2e8f0;
+}
+
+.dark-mode .suggestion-header {
+  background: rgba(51, 65, 85, 0.5);
+  border-color: rgba(71, 85, 105, 0.3);
+}
+
+.dark-mode .suggestion-item:hover {
+  background: rgba(71, 85, 105, 0.3);
+}
+
+/* 暗色模式切换按钮 */
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 4rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 100;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+}
+
+@media (max-width: 600px) {
+  .theme-toggle {
+    top: auto;
+    bottom: 4rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+  }
+}

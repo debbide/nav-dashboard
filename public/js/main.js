@@ -259,12 +259,42 @@ function setupSearch() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     loadBackground();
     loadCategories();
     loadSites();
     setupSearch();
     loadIpInfo();
+    registerServiceWorker();
 });
+
+// ==================== 暗色模式 ====================
+
+function initTheme() {
+    const toggle = document.getElementById('themeToggle');
+    const isDark = localStorage.getItem('darkMode') === 'true';
+
+    if (isDark) {
+        document.documentElement.classList.add('dark-mode');
+        toggle.textContent = '☀️';
+    }
+
+    toggle.addEventListener('click', () => {
+        const isDarkNow = document.documentElement.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', isDarkNow);
+        toggle.textContent = isDarkNow ? '☀️' : '🌙';
+    });
+}
+
+// ==================== Service Worker ====================
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW registration failed'));
+    }
+}
 
 // ==================== IP Info Card ====================
 

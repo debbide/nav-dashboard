@@ -6,10 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>导航站</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=7">
+  <link rel="stylesheet" href="/css/style.css?v=8">
 </head>
 
 <body>
+  <!-- 暗色模式切换 -->
+  <button id="themeToggle" class="theme-toggle" title="切换主题">🌙</button>
+
   <div class="container">
 
     <!-- 顶栏：搜索引擎 -->
@@ -49,9 +52,30 @@
       <div class="content-wrapper">
         <main class="main-content">
           <div id="sitesGrid" class="sites-grid">
-            <div class="loading">
-              <div class="loading-spinner"></div>
-              <p>加载中...</p>
+            <!-- 骨架屏加载 -->
+            <div class="skeleton-card">
+              <div class="skeleton-logo"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-logo"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-logo"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-logo"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-logo"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-logo"></div>
+              <div class="skeleton-text"></div>
             </div>
           </div>
 
