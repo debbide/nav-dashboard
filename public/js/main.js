@@ -141,7 +141,7 @@ function createSiteCard(site) {
     }
 
     card.innerHTML = `
-        <img class="site-logo" src="${logo}" alt="${site.name}" onerror="this.parentElement.style.display='none'">
+        <img class="site-logo" src="${logo}" alt="${site.name}" loading="lazy" onerror="this.parentElement.style.display='none'">
         <span class="site-name">${site.name}</span>
     `;
 

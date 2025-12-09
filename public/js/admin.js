@@ -141,6 +141,7 @@ function renderSitesTable() {
         <img src="${site.logo || getDefaultLogo(site.url)}" 
              alt="${site.name}" 
              class="table-logo"
+             loading="lazy"
              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><text y=%2224%22 font-size=%2224%22>🌐</text></svg>'">
       </td>
       <td>${escapeHtml(site.name)}</td>
