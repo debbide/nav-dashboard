@@ -69,18 +69,22 @@ function renderCategories(categories) {
     const container = document.getElementById('categoriesList');
     container.innerHTML = '';
 
-    // 先添加其他分类
-    categories.forEach(category => {
-        const tab = createCategoryTab(category.id, category.name, category.color, false, category.icon);
+    // 默认选中第一个分类（常用工具）
+    const defaultCategoryId = categories.length > 0 ? categories[0].id : 'all';
+
+    // 先添加其他分类（第一个默认激活）
+    categories.forEach((category, index) => {
+        const isActive = index === 0;
+        const tab = createCategoryTab(category.id, category.name, category.color, isActive, category.icon);
         container.appendChild(tab);
     });
 
-    // 最后添加"全部"标签（放在底部）
-    const allTab = createCategoryTab('all', '全部', '#a78bfa', true, '📚');
+    // 最后添加"全部"标签（放在底部，不激活）
+    const allTab = createCategoryTab('all', '全部', '#a78bfa', categories.length === 0, '📚');
     container.appendChild(allTab);
 
-    // 默认加载全部站点
-    loadSites('all');
+    // 默认加载第一个分类的站点
+    loadSites(defaultCategoryId);
 }
 
 // 创建分类标签
