@@ -153,6 +153,7 @@ function setupSearch() {
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const searchEngine = document.getElementById('searchEngine');
+    const suggestions = document.getElementById('searchSuggestions');
 
     const engines = {
         google: 'https://www.google.com/search?q=',
@@ -161,17 +162,87 @@ function setupSearch() {
         duckduckgo: 'https://duckduckgo.com/?q='
     };
 
+    // 外部搜索
     function doSearch() {
         const query = searchInput.value.trim();
         if (query) {
             const engine = searchEngine.value;
             window.open(engines[engine] + encodeURIComponent(query), '_blank');
+            hideSuggestions();
         }
     }
+
+    // 显示站内搜索建议
+    async function showSuggestions() {
+        const query = searchInput.value.trim().toLowerCase();
+        if (!query) {
+            hideSuggestions();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/api/sites`);
+            const data = await response.json();
+
+            if (data.success) {
+                const matches = data.data.filter(site =>
+                    site.name.toLowerCase().includes(query) ||
+                    site.url.toLowerCase().includes(query) ||
+                    (site.description && site.description.toLowerCase().includes(query))
+                ).slice(0, 6);  // 最多显示6个
+
+                if (matches.length > 0) {
+                    suggestions.innerHTML = `
+                        <div class="suggestion-header">📌 站内匹配</div>
+                        ${matches.map(site => `
+                            <a href="${site.url}" target="_blank" class="suggestion-item">
+                                <img src="${site.logo || ''}" alt="" onerror="this.style.display='none'">
+                                <span class="suggestion-name">${site.name}</span>
+                                <span class="suggestion-url">${getDomain(site.url)}</span>
+                            </a>
+                        `).join('')}
+                    `;
+                    suggestions.classList.add('active');
+                } else {
+                    suggestions.innerHTML = `<div class="suggestion-empty">无匹配站点，按 Enter 使用 ${searchEngine.value} 搜索</div>`;
+                    suggestions.classList.add('active');
+                }
+            }
+        } catch (error) {
+            console.error('搜索建议加载失败:', error);
+        }
+    }
+
+    function hideSuggestions() {
+        suggestions.classList.remove('active');
+    }
+
+    function getDomain(url) {
+        try {
+            return new URL(url).hostname;
+        } catch {
+            return url;
+        }
+    }
+
+    // 防抖搜索
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(showSuggestions, 200);
+    });
 
     searchBtn.addEventListener('click', doSearch);
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') doSearch();
+        if (e.key === 'Escape') hideSuggestions();
+    });
+
+    // 点击外部关闭建议
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-input-wrapper')) {
+            hideSuggestions();
+        }
     });
 }
 
