@@ -243,15 +243,6 @@ function createSiteCard(site) {
         return null;
     }
 
-    // 外部图片走代理缓存，本地/data URL 直接使用
-    const isExternal = logo.startsWith('http://') || logo.startsWith('https://');
-    const isLocalApi = logo.startsWith('/api/');
-    const isDataUrl = logo.startsWith('data:');
-
-    const proxyLogo = (isExternal && !isLocalApi && !isDataUrl)
-        ? `/api/proxy/image?url=${encodeURIComponent(logo)}`
-        : logo;
-
     const card = document.createElement('a');
     card.href = site.url;
     card.target = '_blank';
@@ -261,7 +252,7 @@ function createSiteCard(site) {
         <div class="logo-wrapper">
             <div class="logo-placeholder"></div>
             <img class="site-logo lazy" 
-                 data-src="${proxyLogo}" 
+                 data-src="${logo}" 
                  alt="${site.name}">
         </div>
         <span class="site-name">${site.name}</span>
