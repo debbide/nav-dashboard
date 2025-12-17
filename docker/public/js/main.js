@@ -920,6 +920,7 @@ function initQuickAdd() {
     const quickAddCancelBtn = document.getElementById('quickAddCancelBtn');
     const quickAddConfirmBtn = document.getElementById('quickAddConfirmBtn');
     const quickAddError = document.getElementById('quickAddError');
+    const quickAddCategory = document.getElementById('quickAddCategory');
     const gearMenu = document.getElementById('gearMenu');
     const passwordModal = document.getElementById('passwordModal');
 
@@ -948,8 +949,28 @@ function initQuickAdd() {
         quickAddLogo.value = '';
         quickAddLogoPreview.innerHTML = '';
         quickAddError.textContent = '';
+        // 加载分类选项
+        loadQuickAddCategories();
         quickAddModal.style.display = 'flex';
         quickAddName.focus();
+    }
+
+    // 加载分类到下拉框
+    async function loadQuickAddCategories() {
+        try {
+            const response = await fetch(`${API_BASE}/api/categories`);
+            const data = await response.json();
+            if (data.success && data.data) {
+                quickAddCategory.innerHTML = '<option value="">选择分类...</option>' +
+                    data.data.map(cat => `<option value="${cat.id}">${cat.icon || ''} ${cat.name}</option>`).join('');
+                // 默认选中当前分类
+                if (currentCategory && currentCategory !== 'all') {
+                    quickAddCategory.value = currentCategory;
+                }
+            }
+        } catch (error) {
+            console.error('加载分类失败:', error);
+        }
     }
 
     // 关闭快速添加弹窗
@@ -1063,7 +1084,7 @@ function initQuickAdd() {
                     name,
                     url,
                     logo,
-                    category_id: currentCategory !== 'all' ? currentCategory : null,
+                    category_id: quickAddCategory.value || null,
                     sort_order: 0
                 })
             });

@@ -1614,6 +1614,18 @@ body {
   max-width: 400px;
 }
 
+.quick-add-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
 .quick-add-logo-row {
   display: flex;
   gap: 0.5rem;
