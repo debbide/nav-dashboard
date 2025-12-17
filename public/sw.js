@@ -37,6 +37,11 @@ self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
 
+    // 只处理 http/https 请求，跳过 chrome-extension:// 等
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
+
     // 图片代理请求：Cache First（优先本地缓存）
     if (url.pathname === '/api/proxy/image') {
         event.respondWith(

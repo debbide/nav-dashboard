@@ -82,12 +82,23 @@ async function handleImport(event) {
     }
 
     try {
-        const text = await file.text();
-        const data = JSON.parse(text);
+        let text = await file.text();
+        // 去除可能的 BOM 头和首尾空白
+        text = text.replace(/^\uFEFF/, '').trim();
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            msgEl.textContent = 'JSON 解析失败: ' + parseError.message;
+            msgEl.className = 'password-msg error';
+            return;
+        }
 
         if (!data.categories || !data.sites) {
-            msgEl.textContent = '无效的备份文件格式';
+            msgEl.textContent = '无效的备份文件格式: 缺少 categories 或 sites 字段';
             msgEl.className = 'password-msg error';
+            console.log('导入数据结构:', Object.keys(data));
             return;
         }
 
