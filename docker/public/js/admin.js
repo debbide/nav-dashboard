@@ -353,7 +353,7 @@ function populateCategoryFilter() {
     if (!select) return;
 
     const currentValue = select.value;
-    select.innerHTML = '<option value="all">💠 全部分类</option>' +
+    select.innerHTML = '<option value="all">🔯 全部分类</option>' +
         categories.map(cat => `<option value="${cat.id}">${cat.icon || '📁'} ${cat.name}</option>`).join('');
     select.value = currentValue;
 }

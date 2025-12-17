@@ -183,7 +183,7 @@ function renderCategories(categories) {
     });
 
     // 最后添加"全部"标签（放在底部，不激活）
-    const allTab = createCategoryTab('all', '全部', '#a78bfa', categories.length === 0, '💠');
+    const allTab = createCategoryTab('all', '全部', '#a78bfa', categories.length === 0, '🔯');
     container.appendChild(allTab);
 
     // 默认加载第一个分类的站点
