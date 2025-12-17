@@ -1,0 +1,13 @@
+services:
+  nav-dashboard:
+    build: .
+    container_name: nav-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    environment:
+      - ADMIN_PASSWORD=admin123
+      - TZ=Asia/Shanghai

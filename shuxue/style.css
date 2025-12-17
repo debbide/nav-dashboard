@@ -1,0 +1,377 @@
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 设置面板 */
+.settings-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.settings-panel h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.setting-group {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.setting-group > label {
+    display: block;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.range-inputs input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.range-inputs input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.range-inputs span {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s;
+}
+
+.checkbox-label:hover {
+    border-color: #667eea;
+    background: #f0f0ff;
+}
+
+.checkbox-label input {
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+}
+
+.checkbox-label span {
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* 按钮组 */
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.btn.secondary {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.btn.secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(17, 153, 142, 0.4);
+}
+
+/* 打印区域 */
+.print-area {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.worksheet-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px dashed #dee2e6;
+}
+
+.worksheet-header h2 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.student-info {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    font-size: 1rem;
+    color: #495057;
+}
+
+.student-info span {
+    padding: 5px 0;
+}
+
+/* 题目容器 */
+.questions-container {
+    display: grid;
+    gap: 15px;
+}
+
+.question-row {
+    display: grid;
+    gap: 20px;
+}
+
+.question-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.question-number {
+    font-weight: 600;
+    color: #667eea;
+    margin-right: 12px;
+    min-width: 35px;
+}
+
+.question-content {
+    font-size: 1.2rem;
+    color: #333;
+    font-family: 'Consolas', 'Monaco', monospace;
+    letter-spacing: 1px;
+}
+
+.answer-blank {
+    display: inline-block;
+    width: 60px;
+    border-bottom: 2px solid #495057;
+    margin-left: 5px;
+}
+
+.answer-value {
+    display: inline-block;
+    color: #e74c3c;
+    font-weight: 600;
+    margin-left: 5px;
+    min-width: 60px;
+}
+
+/* 答案区域 */
+.answers-section {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px dashed #dee2e6;
+}
+
+.answers-section h3 {
+    text-align: center;
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+.answers-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.answer-item {
+    padding: 5px 10px;
+    background: #f0f0ff;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.answer-item .num {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.answer-item .val {
+    color: #e74c3c;
+}
+
+/* 打印样式 */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .print-area {
+        box-shadow: none;
+        padding: 15mm;
+        border-radius: 0;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
+    .question-item {
+        background: white;
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+        page-break-inside: avoid;
+    }
+
+    .question-content {
+        font-size: 14pt;
+    }
+
+    .worksheet-header h2 {
+        font-size: 18pt;
+    }
+
+    .student-info {
+        font-size: 11pt;
+    }
+
+    .answers-section {
+        page-break-before: auto;
+    }
+
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    .settings-panel {
+        padding: 20px;
+    }
+
+    .settings-panel h1 {
+        font-size: 1.4rem;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .print-area {
+        padding: 20px;
+    }
+
+    .student-info {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+}

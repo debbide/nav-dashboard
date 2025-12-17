@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学生数学运算练习生成器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 设置面板 -->
+        <div class="settings-panel no-print">
+            <h1>📐 小学生数学运算练习生成器</h1>
+            
+            <div class="settings-grid">
+                <div class="setting-group">
+                    <label>数字范围</label>
+                    <div class="range-inputs">
+                        <input type="number" id="minNumber" value="1" min="0" max="999">
+                        <span>至</span>
+                        <input type="number" id="maxNumber" value="100" min="1" max="999">
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label>运算类型</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="opAdd" checked>
+                            <span>加法 (+)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="opSub" checked>
+                            <span>减法 (-)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="opMul">
+                            <span>乘法 (×)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="opDiv">
+                            <span>除法 (÷)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label>题目数量</label>
+                    <select id="questionCount">
+                        <option value="20">20 题</option>
+                        <option value="30">30 题</option>
+                        <option value="40" selected>40 题</option>
+                        <option value="50">50 题</option>
+                        <option value="60">60 题</option>
+                        <option value="80">80 题</option>
+                        <option value="100">100 题</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>每行题数</label>
+                    <select id="columnsCount">
+                        <option value="2">2 题/行</option>
+                        <option value="3">3 题/行</option>
+                        <option value="4" selected>4 题/行</option>
+                        <option value="5">5 题/行</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>特殊选项</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="noNegative" checked>
+                            <span>减法结果不为负数</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="noDivRemainder" checked>
+                            <span>除法结果为整数</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showAnswers">
+                            <span>显示答案</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="generateBtn" class="btn primary">🎲 生成题目</button>
+                <button id="printBtn" class="btn secondary">🖨️ 打印练习</button>
+            </div>
+        </div>
+
+        <!-- 打印区域 -->
+        <div class="print-area" id="printArea">
+            <div class="worksheet-header">
+                <h2>数学运算练习</h2>
+                <div class="student-info">
+                    <span>姓名：___________</span>
+                    <span>班级：___________</span>
+                    <span>日期：___________</span>
+                    <span>得分：___________</span>
+                </div>
+            </div>
+            <div class="questions-container" id="questionsContainer">
+                <!-- 题目将在这里生成 -->
+            </div>
+            <div class="answers-section" id="answersSection" style="display: none;">
+                <h3>参考答案</h3>
+                <div class="answers-container" id="answersContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

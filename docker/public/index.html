@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导航站</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css?v=9">
+</head>
+
+<body>
+  <!-- 暗色模式切换 -->
+  <button id="themeToggle" class="theme-toggle" title="切换主题">🌙</button>
+
+  <div class="container">
+
+    <!-- 顶栏：搜索引擎 -->
+    <header class="header-simple">
+      <div class="search-box-center glass-effect">
+        <div class="search-engines">
+          <button type="button" class="engine-btn active" data-engine="google" title="Google">
+            <img src="https://www.google.com/favicon.ico" alt="Google">
+          </button>
+          <button type="button" class="engine-btn" data-engine="bing" title="Bing">
+            <img src="https://www.bing.com/favicon.ico" alt="Bing">
+          </button>
+          <button type="button" class="engine-btn" data-engine="github" title="GitHub">
+            <img src="https://github.com/favicon.ico" alt="GitHub">
+          </button>
+        </div>
+        <div class="search-input-wrapper">
+          <input type="text" id="searchInput" class="search-input" placeholder=" " autocomplete="off">
+          <label for="searchInput" class="search-label">搜索站点...</label>
+          <div id="searchSuggestions" class="search-suggestions"></div>
+        </div>
+        <button id="searchBtn" class="search-btn">🔍</button>
+      </div>
+      <a href="/admin.html" class="admin-link" title="管理">⚙️</a>
+    </header>
+
+    <!-- 主布局 -->
+    <div class="layout-wrapper">
+      <!-- 左侧分类侧边栏 -->
+      <aside class="sidebar">
+        <div id="categoriesList" class="categories-sidebar">
+          <!-- 动态加载分类 -->
+        </div>
+      </aside>
+
+      <!-- 右侧内容区 -->
+      <div class="content-wrapper">
+        <main class="main-content">
+          <div id="sitesGrid" class="sites-grid">
+            <!-- 由 JavaScript 动态生成骨架屏和站点卡片 -->
+          </div>
+
+          <!-- 无限滚动触发器 -->
+          <div id="loadMoreTrigger" class="load-more-trigger">
+            <div class="loading-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="empty-icon">📭</div>
+            <h3>暂无站点</h3>
+            <p>还没有添加任何站点</p>
+            <a href="/admin.html" class="btn-primary">前往管理后台</a>
+          </div>
+        </main>
+      </div>
+    </div>
+
+  </div>
+
+  <footer
+    style="position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(255,255,255,0.5);">
+    <a href="https://github.com/debbide/nav-dashboard" target="_blank"
+      style="color: rgba(255,255,255,0.6); text-decoration: none;">
+      GitHub: debbide/nav-dashboard
+    </a>
+  </footer>
+
+  <!-- IP Info Card -->
+  <div id="ipCard" class="ip-card glass-effect" style="display: none;">
+    <div class="ip-header">
+      <span class="ip-greeting" id="ipGreeting">👋 欢迎光临</span>
+      <button class="ip-close" onclick="closeIpCard()">×</button>
+    </div>
+    <div class="ip-stats">
+      <span id="visitCount">第 1 次访问</span>
+    </div>
+    <div class="ip-content-compact">
+      <div class="ip-info-row">
+        <span class="ip-icon bounce">📍</span>
+        <span id="ipLocation">加载中...</span>
+      </div>
+      <div class="ip-info-row">
+        <span class="ip-icon pulse">🌐</span>
+        <span id="ipAddress">...</span>
+      </div>
+    </div>
+    <div class="ip-weather" id="ipWeather">
+      <span class="weather-icon">🌤️</span>
+      <span class="weather-temp" id="weatherTemp">--°C</span>
+      <span class="weather-desc" id="weatherDesc">获取天气中...</span>
+    </div>
+  </div>
+
+  <script src="/js/main.js?v=2"></script>
+</body>
+
+</html>

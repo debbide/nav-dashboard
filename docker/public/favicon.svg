@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- 主渐变：暖色调 -->
+    <linearGradient id="warmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="50%" style="stop-color:#764ba2"/>
+      <stop offset="100%" style="stop-color:#ff9a56"/>
+    </linearGradient>
+    <!-- 玻璃高光 -->
+    <linearGradient id="glassShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0.4"/>
+      <stop offset="50%" style="stop-color:white;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:white;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景：圆角矩形 -->
+  <rect width="32" height="32" rx="7" fill="url(#warmGrad)"/>
+  
+  <!-- 玻璃高光效果 -->
+  <rect x="2" y="2" width="28" height="14" rx="5" fill="url(#glassShine)"/>
+  
+  <!-- 导航指针图标 -->
+  <g transform="translate(16,16)">
+    <!-- 外圈：信息网格感 -->
+    <circle cx="0" cy="0" r="10" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.3"/>
+    
+    <!-- 四个方向点 -->
+    <circle cx="0" cy="-10" r="1.5" fill="white" opacity="0.9"/>
+    <circle cx="10" cy="0" r="1.2" fill="white" opacity="0.6"/>
+    <circle cx="0" cy="10" r="1.2" fill="white" opacity="0.6"/>
+    <circle cx="-10" cy="0" r="1.2" fill="white" opacity="0.6"/>
+    
+    <!-- 中心导航针 -->
+    <path d="M0,-7 L3,4 L0,2 L-3,4 Z" fill="white" opacity="0.95"/>
+    
+    <!-- 中心点 -->
+    <circle cx="0" cy="0" r="2" fill="white"/>
+  </g>
+</svg>

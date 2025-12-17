@@ -25,12 +25,9 @@ wrangler.toml.local
 .DS_Store
 Thumbs.db
 
-# 忽略旧的 Docker 文件（如果清理）
-Dockerfile
-docker-compose.yml
-.dockerignore
-server.js
-database.js
+# 忽略根目录的旧 Docker 文件
+/server.js
+/database.js
 
 # 忽略备份和临时文件
 *.bak

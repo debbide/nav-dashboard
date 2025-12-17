@@ -1,0 +1,589 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 导航站</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .login-box {
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+        }
+
+        .login-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-box>p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1.5rem;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .login-error {
+            color: #ff6b6b;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 100;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 去掉紫色按钮 */
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: none !important;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: none !important;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.3) !important;
+        }
+
+        /* 侧边栏和表格表头对齐 */
+        .admin-sidebar {
+            margin-top: 5.5rem;
+            align-self: flex-start;
+        }
+
+        /* 标题样式 */
+        .panel-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+        }
+
+        /* 密码表单样式 */
+        .password-form {
+            max-width: 400px;
+        }
+
+        .password-form .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .password-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .password-msg {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .password-msg.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            display: block;
+        }
+
+        .password-msg.error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 密码验证层 -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box glass-effect">
+            <h2>🔐 管理后台</h2>
+            <p>请输入管理密码</p>
+            <input type="password" id="adminPassword" class="login-input" placeholder="密码..."
+                onkeydown="if(event.key==='Enter')checkPassword()">
+            <button onclick="checkPassword()" class="btn-primary login-btn">登录</button>
+            <p id="loginError" class="login-error"></p>
+        </div>
+    </div>
+
+    <div id="adminContent" class="container" style="display:none;">
+
+        <!-- 左上角返回按钮 -->
+        <a href="/" class="back-btn">🏠 返回</a>
+
+        <!-- 主内容区 -->
+        <main class="admin-main" style="padding-top: 3rem;">
+
+            <!-- 左侧菜单 -->
+            <aside class="admin-sidebar glass-effect">
+                <nav class="admin-nav">
+                    <button class="nav-item active" data-tab="sites">
+                        <span>🌐</span>
+                        <span>站点管理</span>
+                    </button>
+                    <button class="nav-item" data-tab="categories">
+                        <span>📁</span>
+                        <span>分类管理</span>
+                    </button>
+                    <button class="nav-item" data-tab="background">
+                        <span>🖼️</span>
+                        <span>背景设置</span>
+                    </button>
+                    <button class="nav-item" data-tab="password">
+                        <span>🔑</span>
+                        <span>密码设置</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- 右侧内容 -->
+            <section class="admin-content">
+
+                <!-- 站点管理面板 -->
+                <div id="sitesPanel" class="content-panel active">
+                    <div class="panel-header">
+                        <h2>🌐 站点管理</h2>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <input type="text" id="siteSearchInput" class="form-input"
+                                style="width: auto; min-width: 200px;" placeholder="搜索站点..."
+                                oninput="filterSitesBySearch()"><select id="siteCategoryFilter" class="form-input"
+                                style="width: auto; min-width: 150px;" onchange="filterSitesByCategory()">
+                                <option value="all">📁 全部分类</option>
+                            </select>
+                            <button class="btn-primary" onclick="openSiteModal()">
+                                <span>➕</span>
+                                <span>添加站点</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>Logo</th>
+                                    <th>名称</th>
+                                    <th>URL</th>
+                                    <th>分类</th>
+                                    <th>描述</th>
+                                    <th>排序</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sitesTableBody">
+                                <tr>
+                                    <td colspan="8" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页控件 -->
+                    <div id="sitesPagination" class="pagination-container glass-effect"
+                        style="margin-top: 1rem; padding: 1rem; border-radius: 12px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>每页</span>
+                                <select id="pageSizeSelect" class="form-input" style="width: auto; min-width: 70px;"
+                                    onchange="changePageSize()">
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span>条，共 <strong id="paginationTotal">0</strong> 条</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button class="btn-secondary" id="prevPageBtn" onclick="goToPage('prev')" disabled
+                                    style="padding: 0.5rem 1rem;">« 上一页</button>
+                                <span style="margin: 0 0.5rem;">
+                                    第 <input type="text" id="currentPageInput" class="form-input"
+                                        style="width: 45px; text-align: center; padding: 0.4rem;"
+                                        onchange="goToPageInput()"> 页
+                                    / 共 <strong id="totalPages">1</strong> 页
+                                </span>
+                                <button class="btn-secondary" id="nextPageBtn" onclick="goToPage('next')"
+                                    style="padding: 0.5rem 1rem;">下一页 »</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分类管理面板 -->
+                <div id="categoriesPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>📁 分类管理</h2>
+                        <button class="btn-primary" onclick="openCategoryModal()">
+                            <span>➕</span>
+                            <span>添加分类</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>图标</th>
+                                    <th>名称</th>
+                                    <th>颜色</th>
+                                    <th>站点数</th>
+                                    <th>排序</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 背景设置面板 -->
+                <div id="backgroundPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>🖼️ 背景设置</h2>
+                    </div>
+                    <div class="table-container glass-effect" style="padding: 2rem;">
+                        <form id="backgroundForm" style="max-width: 600px;">
+                            <div class="form-group">
+                                <label for="backgroundUrl">背景图片URL</label>
+                                <input type="url" id="backgroundUrl" class="form-input"
+                                    placeholder="https://example.com/image.jpg">
+                            </div>
+                            <div class="form-group">
+                                <label>预设背景（点击即可应用）</label>
+                                <div
+                                    style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.5rem;">
+                                    <button type="button" class="preset-btn"
+                                        data-url="https://images.unsplash.com/photo-1484821582734-6c6c9f99a672?q=80&w=2000&auto=format&fit=crop"
+                                        style="padding: 0; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; background: white;">
+                                        <img src="https://images.unsplash.com/photo-1484821582734-6c6c9f99a672?q=80&w=200&auto=format&fit=crop"
+                                            style="width: 100%; display: block; border-radius: 6px 6px 0 0;">
+                                        <div style="padding: 0.5rem; text-align: center;">海天一色</div>
+                                    </button>
+                                    <button type="button" class="preset-btn"
+                                        data-url="https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?q=80&w=2000&auto=format&fit=crop"
+                                        style="padding: 0; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; background: white;">
+                                        <img src="https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?q=80&w=200&auto=format&fit=crop"
+                                            style="width: 100%; display: block; border-radius: 6px 6px 0 0;">
+                                        <div style="padding: 0.5rem; text-align: center;">桂林山水</div>
+                                    </button>
+                                    <button type="button" class="preset-btn"
+                                        data-url="https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2000&auto=format&fit=crop"
+                                        style="padding: 0; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; background: white;">
+                                        <img src="https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=200&auto=format&fit=crop"
+                                            style="width: 100%; display: block; border-radius: 6px 6px 0 0;">
+                                        <div style="padding: 0.5rem; text-align: center;">大海</div>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-actions" style="margin-top: 1.5rem;">
+                                <button type="submit" class="btn-primary">💾 保存背景设置</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 密码设置面板 -->
+                <div id="passwordPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>🔑 密码设置</h2>
+                    </div>
+                    <div class="table-container glass-effect" style="padding: 2rem;">
+                        <form id="passwordForm" class="password-form">
+                            <div class="form-group">
+                                <label for="oldPassword">原密码</label>
+                                <input type="password" id="oldPassword" class="form-input" placeholder="请输入原密码"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">新密码</label>
+                                <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（至少4位）"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">确认新密码</label>
+                                <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码"
+                                    required>
+                            </div>
+                            <div class="form-actions" style="margin-top: 1.5rem;">
+                                <button type="submit" class="btn-primary">💾 修改密码</button>
+                            </div>
+                            <div id="passwordMsg" class="password-msg"></div>
+                        </form>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- 站点模态框 -->
+    <div id="siteModal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="siteModalTitle">添加站点</h3>
+                <button class="modal-close" onclick="closeSiteModal()">✕</button>
+            </div>
+
+            <form id="siteForm" class="modal-body">
+                <input type="hidden" id="siteId">
+
+                <div class="form-group">
+                    <label for="siteName">站点名称 *</label>
+                    <input type="text" id="siteName" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteUrl">站点 URL *</label>
+                    <input type="url" id="siteUrl" class="form-input" placeholder="https://example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteDescription">描述</label>
+                    <textarea id="siteDescription" class="form-input" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteCategory">分类</label>
+                    <select id="siteCategory" class="form-input">
+                        <option value="">无分类</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Logo</label>
+                    <div class="logo-input-group">
+                        <input type="text" id="siteLogo" class="form-input" placeholder="输入远程URL或点击获取">
+                        <button type="button" class="btn-secondary" onclick="autoFetchLogo()"
+                            style="white-space: nowrap;">🔍 获取</button>
+                        <label class="btn-upload">
+                            <input type="file" id="logoUpload" accept="image/*" style="display: none;"
+                                onchange="handleLogoUpload(event)">
+                            <span>📁 上传</span>
+                        </label>
+                    </div>
+                    <div id="logoPreview" class="logo-preview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="siteSortOrder">排序</label>
+                    <input type="number" id="siteSortOrder" class="form-input" value="0" min="0">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeSiteModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 分类模态框 -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="categoryModalTitle">添加分类</h3>
+                <button class="modal-close" onclick="closeCategoryModal()">✕</button>
+            </div>
+
+            <form id="categoryForm" class="modal-body">
+                <input type="hidden" id="categoryId">
+
+                <div class="form-group">
+                    <label for="categoryName">分类名称 *</label>
+                    <input type="text" id="categoryName" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryIcon">图标（Emoji）</label>
+                    <input type="text" id="categoryIcon" class="form-input" placeholder="🌐">
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryColor">颜色</label>
+                    <input type="color" id="categoryColor" class="form-input color-input" value="#ff9a56">
+                </div>
+
+                <div class="form-group">
+                    <label for="categorySortOrder">排序</label>
+                    <input type="number" id="categorySortOrder" class="form-input" value="0" min="0">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeCategoryModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Session过期时间（2小时）
+        const SESSION_TIMEOUT = 2 * 60 * 60 * 1000;
+
+        function isSessionExpired() {
+            const loginTime = sessionStorage.getItem('adminLoginTime');
+            if (!loginTime) return true;
+            return Date.now() - parseInt(loginTime) > SESSION_TIMEOUT;
+        }
+
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminLoginTime');
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('adminContent').style.display = 'none';
+        }
+
+        async function checkPassword() {
+            const input = document.getElementById('adminPassword').value;
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: input })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                    sessionStorage.setItem('adminLoginTime', Date.now().toString());
+                } else {
+                    document.getElementById('loginError').textContent = '密码错误，请重试';
+                }
+            } catch (error) {
+                document.getElementById('loginError').textContent = '验证失败，请重试';
+            }
+        }
+
+        if (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired()) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+        } else {
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminLoginTime');
+        }
+
+        setInterval(() => {
+            if (sessionStorage.getItem('adminLoggedIn') === 'true' && isSessionExpired()) {
+                logout();
+                alert('登录已过期，请重新登录');
+            }
+        }, 60000);
+
+        // 密码修改表单
+        document.getElementById('passwordForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const msgEl = document.getElementById('passwordMsg');
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                msgEl.textContent = '两次输入的新密码不一致';
+                msgEl.className = 'password-msg error';
+                return;
+            }
+
+            if (newPassword.length < 4) {
+                msgEl.textContent = '新密码不能少于4位';
+                msgEl.className = 'password-msg error';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/settings/password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    msgEl.textContent = '密码修改成功！下次登录请使用新密码';
+                    msgEl.className = 'password-msg success';
+                    document.getElementById('passwordForm').reset();
+                    sessionStorage.removeItem('adminLoggedIn');
+                } else {
+                    msgEl.textContent = data.error || '修改失败';
+                    msgEl.className = 'password-msg error';
+                }
+            } catch (error) {
+                msgEl.textContent = '网络错误，请重试';
+                msgEl.className = 'password-msg error';
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/data-manager.js"></script>
+</body>
+
+</html>

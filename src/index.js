@@ -227,6 +227,16 @@ async function handleAPI(request, env, pathname, corsHeaders) {
         return await proxyImage(request, ctx, corsHeaders);
     }
 
+    // 数据导出 API
+    if (pathname === '/api/export' && method === 'GET') {
+        return await exportData(env, corsHeaders);
+    }
+
+    // 数据导入 API
+    if (pathname === '/api/import' && method === 'POST') {
+        return await importData(request, env, corsHeaders);
+    }
+
     return jsonResponse({ success: false, message: 'API Not Found' }, 404, corsHeaders);
 }
 
@@ -804,3 +814,91 @@ async function checkRateLimit(request, env) {
     }
 }
 
+// ==================== 数据导出导入 ====================
+
+// 导出所有数据
+async function exportData(env, headers) {
+    try {
+        // 获取分类
+        const { results: categories } = await env.DB.prepare(`
+            SELECT id, name, icon, color, sort_order FROM categories ORDER BY sort_order ASC
+        `).all();
+
+        // 获取站点
+        const { results: sites } = await env.DB.prepare(`
+            SELECT id, name, url, description, logo, category_id, sort_order FROM sites ORDER BY sort_order ASC
+        `).all();
+
+        // 获取设置（排除密码）
+        const { results: settings } = await env.DB.prepare(`
+            SELECT key, value FROM settings WHERE key != 'admin_password'
+        `).all();
+
+        const exportData = {
+            version: '1.0',
+            exportTime: new Date().toISOString(),
+            categories,
+            sites,
+            settings
+        };
+
+        return new Response(JSON.stringify(exportData, null, 2), {
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Disposition': 'attachment; filename="nav-dashboard-backup.json"',
+                ...headers
+            }
+        });
+    } catch (error) {
+        return jsonResponse({ success: false, message: '导出失败: ' + error.message }, 500, headers);
+    }
+}
+
+// 导入数据
+async function importData(request, env, headers) {
+    try {
+        const data = await request.json();
+
+        if (!data.categories || !data.sites) {
+            return jsonResponse({ success: false, message: '无效的导入数据格式' }, 400, headers);
+        }
+
+        // 清空现有数据
+        await env.DB.prepare('DELETE FROM sites').run();
+        await env.DB.prepare('DELETE FROM categories').run();
+        await env.DB.prepare("DELETE FROM settings WHERE key != 'admin_password'").run();
+
+        // 导入分类（保留原 ID 映射）
+        const categoryIdMap = {};
+        for (const cat of data.categories) {
+            const result = await env.DB.prepare(`
+                INSERT INTO categories (name, icon, color, sort_order) VALUES (?, ?, ?, ?)
+            `).bind(cat.name, cat.icon || '', cat.color || '#ff9a56', cat.sort_order || 0).run();
+            categoryIdMap[cat.id] = result.meta.last_row_id;
+        }
+
+        // 导入站点（映射分类 ID）
+        for (const site of data.sites) {
+            const newCategoryId = site.category_id ? categoryIdMap[site.category_id] : null;
+            await env.DB.prepare(`
+                INSERT INTO sites (name, url, description, logo, category_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)
+            `).bind(site.name, site.url, site.description || '', site.logo || '', newCategoryId, site.sort_order || 0).run();
+        }
+
+        // 导入设置
+        if (data.settings) {
+            for (const setting of data.settings) {
+                await env.DB.prepare(`
+                    INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
+                `).bind(setting.key, setting.value).run();
+            }
+        }
+
+        return jsonResponse({
+            success: true,
+            message: `导入成功: ${data.categories.length} 个分类, ${data.sites.length} 个站点`
+        }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ success: false, message: '导入失败: ' + error.message }, 500, headers);
+    }
+}
