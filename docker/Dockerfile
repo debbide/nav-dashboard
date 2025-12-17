@@ -23,15 +23,8 @@ COPY package*.json ./
 COPY server ./server
 COPY public ./public
 
-# 创建数据目录
-RUN mkdir -p /app/data /app/uploads
-
-# 设置非 root 用户（安全最佳实践）
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
-
-USER nodejs
+# 创建数据目录并设置权限
+RUN mkdir -p /app/data /app/uploads && chmod 777 /app/uploads /app/data
 
 # 暴露端口
 EXPOSE 3000

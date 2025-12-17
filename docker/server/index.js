@@ -41,33 +41,73 @@ async function cacheRemoteImage(imageUrl) {
     }
 
     // 验证 URL
+    let parsedUrl;
     try {
-        new URL(imageUrl);
+        parsedUrl = new URL(imageUrl);
     } catch {
         return imageUrl;
     }
 
+    // 如果是 Google Favicon API，尝试直接从原站获取
+    if (imageUrl.includes('google.com/s2/favicons')) {
+        const domainMatch = imageUrl.match(/domain=([^&]+)/);
+        if (domainMatch) {
+            const domain = decodeURIComponent(domainMatch[1]);
+            // 尝试直接获取网站的 favicon
+            const directFaviconUrl = `https://${domain}/favicon.ico`;
+            const cached = await tryDownloadImage(directFaviconUrl);
+            if (cached) return cached;
+
+            // 备选：尝试其他 favicon 服务
+            const fallbackApis = [
+                `https://favicon.im/${domain}`,
+                `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+            ];
+
+            for (const api of fallbackApis) {
+                const result = await tryDownloadImage(api);
+                if (result) return result;
+            }
+
+            return imageUrl; // 全部失败，返回原 URL
+        }
+    }
+
+    // 普通图片 URL，直接下载
+    return await tryDownloadImage(imageUrl) || imageUrl;
+}
+
+// 尝试下载单个图片
+async function tryDownloadImage(imageUrl) {
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(), 8000);
 
         const response = await fetch(imageUrl, {
             signal: controller.signal,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; NavDashboard/1.0)',
-                'Accept': 'image/*'
-            }
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'image/*,*/*'
+            },
+            redirect: 'follow'
         });
         clearTimeout(timeout);
 
         if (!response.ok) {
-            console.log(`图片下载失败: ${imageUrl} - ${response.status}`);
-            return imageUrl;
+            return null;
         }
 
         const contentType = response.headers.get('Content-Type') || '';
-        if (!contentType.startsWith('image/')) {
-            return imageUrl;
+        // 允许更多类型，有些服务器返回错误的 Content-Type
+        if (!contentType.includes('image') && !contentType.includes('octet-stream')) {
+            return null;
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
+
+        // 验证图片大小（至少 100 字节，最大 500KB）
+        if (buffer.length < 100 || buffer.length > 500 * 1024) {
+            return null;
         }
 
         // 根据 Content-Type 确定文件扩展名
@@ -80,18 +120,16 @@ async function cacheRemoteImage(imageUrl) {
             'image/x-icon': '.ico',
             'image/vnd.microsoft.icon': '.ico'
         };
-        const ext = extMap[contentType] || '.png';
+        const ext = extMap[contentType] || '.ico';
         const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
         const filePath = path.join(uploadsDir, filename);
 
-        const buffer = Buffer.from(await response.arrayBuffer());
         fs.writeFileSync(filePath, buffer);
-
         console.log(`图片已缓存: ${imageUrl} -> /api/images/${filename}`);
         return `/api/images/${filename}`;
     } catch (error) {
-        console.log(`图片缓存失败: ${imageUrl} - ${error.message}`);
-        return imageUrl;
+        // 静默失败，不打印错误
+        return null;
     }
 }
 
