@@ -1,6 +1,6 @@
 services:
   nav-dashboard:
-    build: .
+    image: ghcr.io/debbide/nav-dashboard:latest
     container_name: nav-dashboard
     restart: unless-stopped
     ports:
