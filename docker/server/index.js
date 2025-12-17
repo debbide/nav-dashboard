@@ -105,17 +105,20 @@ async function tryDownloadImage(imageUrl) {
         clearTimeout(timeout);
 
         if (!response.ok) {
+            console.log(`下载失败 [${imageUrl}]: HTTP ${response.status} ${response.statusText}`);
             return null;
         }
 
         const contentType = response.headers.get('Content-Type') || '';
         if (!contentType.includes('image') && !contentType.includes('octet-stream')) {
+            console.log(`格式错误 [${imageUrl}]: Content-Type 是 ${contentType}`);
             return null;
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
 
         if (buffer.length < 100 || buffer.length > 500 * 1024) {
+            console.log(`大小不符 [${imageUrl}]: ${buffer.length} bytes (限制 100B - 500KB)`);
             return null;
         }
 
