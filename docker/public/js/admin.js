@@ -39,7 +39,7 @@ async function init() {
         updateLogoPreview(e.target.value);
     });
 
-    // 动态添加两个"获取Logo"按钮
+    // 动态添加Logo获取按钮
     const logoInputGroup = document.querySelector('.logo-input-group');
     if (logoInputGroup) {
         const uploadBtn = logoInputGroup.querySelector('.btn-upload');
@@ -50,35 +50,41 @@ async function init() {
             existingFetchBtn.remove();
         }
 
+        // 创建按钮容器
+        const btnContainer = document.createElement('div');
+        btnContainer.style.cssText = 'display: flex; gap: 4px;';
+
         // 按钮1: Google Favicon
         const fetchBtn1 = document.createElement('button');
         fetchBtn1.type = 'button';
         fetchBtn1.className = 'btn-secondary';
-        fetchBtn1.style.whiteSpace = 'nowrap';
-        fetchBtn1.innerHTML = '🔍 获取1';
+        fetchBtn1.style.cssText = 'padding: 6px 10px; min-width: auto;';
+        fetchBtn1.innerHTML = '<img src="https://www.google.com/favicon.ico" alt="G" style="width:16px;height:16px;vertical-align:middle">';
         fetchBtn1.title = 'Google源';
         fetchBtn1.onclick = autoFetchLogo;
-        logoInputGroup.insertBefore(fetchBtn1, uploadBtn);
 
         // 按钮2: toolb.cn Favicon
         const fetchBtn2 = document.createElement('button');
         fetchBtn2.type = 'button';
         fetchBtn2.className = 'btn-secondary';
-        fetchBtn2.style.whiteSpace = 'nowrap';
-        fetchBtn2.innerHTML = '🔍 获取2';
+        fetchBtn2.style.cssText = 'padding: 6px 10px; min-width: auto;';
+        fetchBtn2.innerHTML = '<img src="https://toolb.cn/favicon.ico" alt="T" style="width:16px;height:16px;vertical-align:middle">';
         fetchBtn2.title = 'toolb.cn源';
         fetchBtn2.onclick = autoFetchLogo2;
-        logoInputGroup.insertBefore(fetchBtn2, uploadBtn);
 
         // 按钮3: 默认图标
         const defaultBtn = document.createElement('button');
         defaultBtn.type = 'button';
         defaultBtn.className = 'btn-secondary';
-        defaultBtn.style.whiteSpace = 'nowrap';
-        defaultBtn.innerHTML = '🌐 默认';
+        defaultBtn.style.cssText = 'padding: 6px 10px; min-width: auto;';
+        defaultBtn.innerHTML = '🌐';
         defaultBtn.title = '使用默认图标';
         defaultBtn.onclick = useDefaultLogo;
-        logoInputGroup.insertBefore(defaultBtn, uploadBtn);
+
+        btnContainer.appendChild(fetchBtn1);
+        btnContainer.appendChild(fetchBtn2);
+        btnContainer.appendChild(defaultBtn);
+        logoInputGroup.insertBefore(btnContainer, uploadBtn);
     }
 
     // 加载数据
