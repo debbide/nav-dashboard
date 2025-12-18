@@ -547,15 +547,10 @@ async function fetchWithTimeout(url, timeout = 5000) {
     }
 }
 
-// 获取天气信息（使用坐标）
-async function loadWeather(lat, lon) {
+// 获取天气信息（带超时）
+async function loadWeather() {
     try {
-        // 使用坐标查询天气，更快更准确
-        const url = lat && lon
-            ? `https://wttr.in/${lat},${lon}?format=j1`
-            : 'https://wttr.in/?format=j1';
-
-        const response = await fetchWithTimeout(url, 5000);
+        const response = await fetchWithTimeout('https://wttr.in/?format=j1', 5000);
         const data = await response.json();
 
         const current = data.current_condition[0];
@@ -593,11 +588,11 @@ async function loadWeather(lat, lon) {
 
 async function loadIpInfo() {
     try {
-        // 使用 ip-api.com 一次性获取 IP + 位置信息（更快）
-        const response = await fetchWithTimeout('http://ip-api.com/json/?lang=zh-CN', 5000);
+        // 使用本地 API 快速获取 IP 信息（与 CF 版本一致）
+        const response = await fetchWithTimeout(`${API_BASE}/api/ip`, 3000);
         const data = await response.json();
 
-        if (data.status === 'success') {
+        if (data.ip) {
             // 设置问候语
             document.getElementById('ipGreeting').textContent = getGreeting();
 
@@ -606,14 +601,8 @@ async function loadIpInfo() {
             document.getElementById('visitCount').textContent = `第 ${visitCount} 次访问`;
 
             // 设置IP信息
-            document.getElementById('ipAddress').textContent = data.query || 'Unknown';
-
-            // 组合位置信息：城市 + 地区
-            const location = [data.city, data.regionName, data.country]
-                .filter(Boolean)
-                .slice(0, 2)
-                .join(', ') || '未知位置';
-            document.getElementById('ipLocation').textContent = location;
+            document.getElementById('ipAddress').textContent = data.ip;
+            document.getElementById('ipLocation').textContent = data.location || '本地网络';
 
             const card = document.getElementById('ipCard');
             card.style.display = 'block';
@@ -623,16 +612,13 @@ async function loadIpInfo() {
                 card.classList.add('show');
             }, 100);
 
-            // 使用坐标加载天气（更快更准确）
-            loadWeather(data.lat, data.lon);
+            // 异步加载天气（不阻塞卡片显示）
+            loadWeather();
 
             // 15秒后自动关闭
             setTimeout(() => {
                 closeIpCard();
             }, 15000);
-        } else {
-            // 降级：只显示基本信息
-            showFallbackIpCard();
         }
     } catch (error) {
         console.error('加载IP信息失败:', error);
