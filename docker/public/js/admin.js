@@ -69,6 +69,16 @@ async function init() {
         fetchBtn2.title = 'toolb.cn源';
         fetchBtn2.onclick = autoFetchLogo2;
         logoInputGroup.insertBefore(fetchBtn2, uploadBtn);
+
+        // 按钮3: 默认图标
+        const defaultBtn = document.createElement('button');
+        defaultBtn.type = 'button';
+        defaultBtn.className = 'btn-secondary';
+        defaultBtn.style.whiteSpace = 'nowrap';
+        defaultBtn.innerHTML = '🌐 默认';
+        defaultBtn.title = '使用默认图标';
+        defaultBtn.onclick = useDefaultLogo;
+        logoInputGroup.insertBefore(defaultBtn, uploadBtn);
     }
 
     // 加载数据
@@ -631,6 +641,15 @@ function autoFetchLogo2() {
     } catch {
         showNotification('URL格式无效', 'error');
     }
+}
+
+// 使用默认图标
+function useDefaultLogo() {
+    const logoInput = document.getElementById('siteLogo');
+    const defaultIcon = '/default-icon.png';
+    logoInput.value = defaultIcon;
+    updateLogoPreview(defaultIcon);
+    showNotification('已设置默认图标', 'success');
 }
 
 // HTML 转义
