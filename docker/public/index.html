@@ -52,8 +52,11 @@
         <input type="url" id="quickAddUrl" placeholder="https://..." autocomplete="off">
         <div class="quick-add-logo-row">
           <input type="text" id="quickAddLogo" placeholder="图标URL（可选）" autocomplete="off">
-          <button type="button" id="quickAddFetch1" class="btn-secondary btn-sm" title="Google源">🔍1</button>
-          <button type="button" id="quickAddFetch2" class="btn-secondary btn-sm" title="toolb.cn源">🔍2</button>
+          <button type="button" id="quickAddFetch1" class="btn-secondary btn-sm" title="Google源"><img
+              src="https://www.google.com/favicon.ico" alt="G" style="width:16px;height:16px"></button>
+          <button type="button" id="quickAddFetch2" class="btn-secondary btn-sm" title="toolb.cn源"><img
+              src="https://toolb.cn/favicon.ico" alt="T" style="width:16px;height:16px"></button>
+          <button type="button" id="quickAddDefault" class="btn-secondary btn-sm" title="默认图标">🌐</button>
         </div>
         <div class="quick-add-logo-preview" id="quickAddLogoPreview"></div>
         <select id="quickAddCategory" class="quick-add-select">
@@ -151,7 +154,7 @@
     </a>
   </footer>
 
-  <script src="/js/main.js?v=9"></script>
+  <script src="/js/main.js?v=10"></script>
 </body>
 
 </html>
