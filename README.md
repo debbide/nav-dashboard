@@ -2,7 +2,7 @@
 
 一个基于卡片式布局的现代化导航站点，采用磨砂玻璃（Glassmorphism）设计风格。支持 Cloudflare 和 Docker 两种部署方式，还有浏览器插件快速添加收藏。
 
-**🔗 在线演示**：https://nav.csee.de5.net
+**🔗 在线演示**：https://nav.cscs.qzz.io
 
 ![导航站截图](screenshot.png)
 
