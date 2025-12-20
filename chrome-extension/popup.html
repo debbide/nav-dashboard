@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加到导航仪表盘</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>📌 添加站点</h1>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="name">站点名称</label>
+                <input type="text" id="name" placeholder="输入站点名称">
+            </div>
+            <div class="form-group logo-group">
+                <label>图标</label>
+                <div class="logo-box">
+                    <img id="logo-img" src="" alt="">
+                    <input type="hidden" id="logo">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="url">站点地址</label>
+            <input type="url" id="url" placeholder="https://example.com">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="description">描述（可选）</label>
+                <input type="text" id="description" placeholder="简短描述">
+            </div>
+            <div class="form-group">
+                <label for="category">分类</label>
+                <select id="category">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="submit-btn" class="btn-primary">✓ 添加</button>
+            <button id="options-btn" class="btn-secondary">⚙️</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div id="not-configured" class="warning" style="display: none;">
+            ⚠️ 请先配置 API 地址
+            <button id="go-options" class="btn-link">前往设置</button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

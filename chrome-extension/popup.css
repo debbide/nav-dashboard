@@ -1,0 +1,241 @@
+:root {
+    --primary-color: #a78bfa;
+    --text-primary: #1e293b;
+    --text-secondary: rgba(30, 41, 59, 0.7);
+    --text-muted: rgba(30, 41, 59, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.35);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --input-bg: rgba(255, 255, 255, 0.45);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+    /* 中性灰蓝色背景 */
+    background: linear-gradient(180deg, #b8c6d4 0%, #9aacbe 100%);
+    color: var(--text-primary);
+    min-width: 380px;
+    min-height: 340px;
+    overflow: hidden;
+}
+
+.container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin: 10px;
+}
+
+h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group.flex-1 {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.3);
+}
+
+.form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.form-group select {
+    cursor: pointer;
+    min-width: 120px;
+}
+
+/* Logo预览 */
+.logo-group {
+    flex-shrink: 0;
+}
+
+.logo-box {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.logo-box img {
+    max-width: 32px;
+    max-height: 32px;
+    object-fit: contain;
+}
+
+/* 按钮组 */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    flex: 1;
+    background: rgba(167, 139, 250, 0.8);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: rgba(167, 139, 250, 0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-secondary);
+    padding: 12px 14px;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+}
+
+/* 消息提示 */
+.message {
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    text-align: center;
+    display: none;
+}
+
+.message.success {
+    display: block;
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.message.error {
+    display: block;
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+/* 警告提示 */
+.warning {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(251, 191, 36, 0.15);
+    color: #b45309;
+    text-align: center;
+    font-size: 13px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px;
+    margin-top: 6px;
+    display: block;
+}
+
+.btn-link:hover {
+    opacity: 0.8;
+}
+
+/* 加载动画 */
+.loading {
+    position: relative;
+    pointer-events: none;
+    color: transparent !important;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
