@@ -79,6 +79,9 @@ function injectDataManagement() {
                         <button class="btn-primary" onclick="cacheAllLogos()" id="cacheLogosBtn">
                             <span>📥 缓存所有图标</span>
                         </button>
+                        <button class="btn-secondary" onclick="restoreRemoteLogos()" id="restoreLogosBtn" style="margin-left: 1rem;">
+                            <span>🌐 恢复网络图标</span>
+                        </button>
                         <div id="cacheMsg" class="password-msg" style="margin-top: 1rem;"></div>
                     </div>
                 </div>
@@ -137,13 +140,10 @@ async function handleImport(event) {
         if (result.success) {
             msgEl.textContent = result.message;
             msgEl.className = 'password-msg success';
-            msgEl.style.display = 'block';  // 强制显示
-            alert('✅ ' + result.message);  // 弹窗确保用户看到
-            setTimeout(() => location.reload(), 500);
+            setTimeout(() => location.reload(), 1500);
         } else {
             msgEl.textContent = result.message || '导入失败';
             msgEl.className = 'password-msg error';
-            msgEl.style.display = 'block';  // 强制显示
         }
     } catch (error) {
         msgEl.textContent = '文件解析失败: ' + error.message;
@@ -178,7 +178,7 @@ async function cacheAllLogos() {
         if (result.success) {
             msgEl.textContent = result.message;
             msgEl.className = 'password-msg success';
-            if (result.cached > 0) {
+            if (result.cached > 0 || result.fixed > 0) {
                 setTimeout(() => location.reload(), 2000);
             }
         } else {
@@ -192,6 +192,45 @@ async function cacheAllLogos() {
 
     btn.disabled = false;
     btn.innerHTML = '<span>📥 缓存所有图标</span>';
+}
+
+// 恢复网络图标
+async function restoreRemoteLogos() {
+    const msgEl = document.getElementById('cacheMsg');
+    const btn = document.getElementById('restoreLogosBtn');
+
+    if (!confirm('确定要恢复为网络图标吗？\n这将把所有站点的图标重置为 Google Favicon 高清源。\n如果您的网络无法访问 Google 服务，图标将无法显示。')) {
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ 处理中...</span>';
+    msgEl.textContent = '正在重置图标，请稍候...';
+    msgEl.className = 'password-msg';
+
+    try {
+        const response = await fetch('/api/sites/restore-remote-logos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            msgEl.textContent = result.message;
+            msgEl.className = 'password-msg success';
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            msgEl.textContent = result.message || '重置失败';
+            msgEl.className = 'password-msg error';
+        }
+    } catch (error) {
+        msgEl.textContent = '请求失败: ' + error.message;
+        msgEl.className = 'password-msg error';
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>🌐 恢复网络图标</span>';
 }
 
 // 书签导入
