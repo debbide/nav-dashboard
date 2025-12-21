@@ -295,6 +295,8 @@ function setupLazyLoad() {
 }
 
 // 无限滚动设置
+let scrollObserver = null;
+
 function setupInfiniteScroll() {
     const trigger = document.getElementById('loadMoreTrigger');
     if (!trigger) return;
@@ -306,14 +308,44 @@ function setupInfiniteScroll() {
         }
     });
 
+    // 使用 IntersectionObserver
     if ('IntersectionObserver' in window) {
-        const scrollObserver = new IntersectionObserver((entries) => {
+        scrollObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading) {
                 loadMoreSites();
             }
-        }, { rootMargin: '200px' });
+        }, {
+            root: null, // 使用 viewport
+            rootMargin: '300px', // 提前 300px 触发
+            threshold: 0
+        });
 
         scrollObserver.observe(trigger);
+    }
+
+    // 备用方案：监听滚动事件
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            checkAndLoadMore();
+        }, 100);
+    }, { passive: true });
+}
+
+// 检查并加载更多（备用方案）
+function checkAndLoadMore() {
+    if (!hasMore || isLoading) return;
+
+    const trigger = document.getElementById('loadMoreTrigger');
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    // 如果 trigger 在视口内或接近视口底部 300px 范围内
+    if (rect.top < windowHeight + 300) {
+        loadMoreSites();
     }
 }
 
@@ -322,6 +354,13 @@ function updateLoadMoreTrigger() {
     const trigger = document.getElementById('loadMoreTrigger');
     if (trigger) {
         trigger.style.display = hasMore ? 'flex' : 'none';
+
+        // 渲染完成后检查是否需要继续加载
+        if (hasMore) {
+            setTimeout(() => {
+                checkAndLoadMore();
+            }, 200);
+        }
     }
 }
 
