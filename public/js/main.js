@@ -183,7 +183,7 @@ function renderCategories(categories) {
     });
 
     // 最后添加"全部"标签（放在底部，不激活）
-    const allTab = createCategoryTab('all', '全部', '#a78bfa', categories.length === 0, '📚');
+    const allTab = createCategoryTab('all', '全部', '#a78bfa', categories.length === 0, '🔯');
     container.appendChild(allTab);
 
     // 默认加载第一个分类的站点
@@ -234,19 +234,18 @@ function renderSites(sites, append = false) {
     });
 }
 
+// 默认图标路径
+const DEFAULT_ICON = '/default-icon.png';
+
 // 创建站点卡片（优化图片加载）
 function createSiteCard(site) {
-    const logo = site.logo || '';
-
-    // 如果没有logo，不创建卡片
-    if (!logo) {
-        return null;
-    }
+    const logo = site.logo || DEFAULT_ICON;
 
     const card = document.createElement('a');
     card.href = site.url;
     card.target = '_blank';
     card.className = 'site-card glass-effect';
+    card.dataset.siteId = site.id; // 添加站点ID用于拖拽排序
 
     card.innerHTML = `
         <div class="logo-wrapper">
@@ -272,7 +271,14 @@ function setupLazyLoad() {
                     const img = entry.target;
                     img.src = img.dataset.src;
                     img.onload = () => img.classList.add('loaded');
-                    img.onerror = () => img.parentElement.classList.add('fallback');
+                    img.onerror = () => {
+                        // 加载失败时使用默认图标
+                        if (img.src !== DEFAULT_ICON) {
+                            img.src = DEFAULT_ICON;
+                        } else {
+                            img.parentElement.classList.add('fallback');
+                        }
+                    };
                     imageObserver.unobserve(img);
                 }
             });
@@ -289,18 +295,57 @@ function setupLazyLoad() {
 }
 
 // 无限滚动设置
+let scrollObserver = null;
+
 function setupInfiniteScroll() {
     const trigger = document.getElementById('loadMoreTrigger');
     if (!trigger) return;
 
+    // 允许点击加载更多（兜底方案）
+    trigger.addEventListener('click', () => {
+        if (hasMore && !isLoading) {
+            loadMoreSites();
+        }
+    });
+
+    // 使用 IntersectionObserver
     if ('IntersectionObserver' in window) {
-        const scrollObserver = new IntersectionObserver((entries) => {
+        scrollObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading) {
                 loadMoreSites();
             }
-        }, { rootMargin: '200px' });
+        }, {
+            root: null, // 使用 viewport
+            rootMargin: '300px', // 提前 300px 触发
+            threshold: 0
+        });
 
         scrollObserver.observe(trigger);
+    }
+
+    // 备用方案：监听滚动事件
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            checkAndLoadMore();
+        }, 100);
+    }, { passive: true });
+}
+
+// 检查并加载更多（备用方案）
+function checkAndLoadMore() {
+    if (!hasMore || isLoading) return;
+
+    const trigger = document.getElementById('loadMoreTrigger');
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    // 如果 trigger 在视口内或接近视口底部 300px 范围内
+    if (rect.top < windowHeight + 300) {
+        loadMoreSites();
     }
 }
 
@@ -308,7 +353,14 @@ function setupInfiniteScroll() {
 function updateLoadMoreTrigger() {
     const trigger = document.getElementById('loadMoreTrigger');
     if (trigger) {
-        trigger.style.display = hasMore ? 'block' : 'none';
+        trigger.style.display = hasMore ? 'flex' : 'none';
+
+        // 渲染完成后检查是否需要继续加载
+        if (hasMore) {
+            setTimeout(() => {
+                checkAndLoadMore();
+            }, 200);
+        }
     }
 }
 
@@ -440,9 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCategories();
     setupSearch();
     setupInfiniteScroll();
-    loadIpInfo();
     registerServiceWorker();
     setupKeyboardShortcuts();
+    initPwaPrompt();
+    setupCopyLinks();
 });
 
 // ==================== 快捷键 ====================
@@ -510,113 +563,687 @@ function registerServiceWorker() {
     }
 }
 
-// ==================== IP Info Card ====================
+// ==================== PWA 安装提示 ====================
 
-// 获取时间问候语
-function getGreeting() {
-    const hour = new Date().getHours();
-    if (hour < 6) return '🌙 夜深了';
-    if (hour < 9) return '🌅 早上好';
-    if (hour < 12) return '☀️ 上午好';
-    if (hour < 14) return '🌞 中午好';
-    if (hour < 18) return '🌤️ 下午好';
-    if (hour < 22) return '🌆 晚上好';
-    return '🌙 夜深了';
+let deferredPrompt = null;
+
+// 监听 beforeinstallprompt 事件
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // 检查是否已经安装或已关闭过提示
+    if (localStorage.getItem('pwaDismissed')) return;
+
+    // 移动端显示安装提示
+    if (isMobile()) {
+        setTimeout(() => {
+            const prompt = document.getElementById('pwaPrompt');
+            if (prompt) prompt.style.display = 'flex';
+        }, 3000); // 3秒后显示
+    }
+});
+
+// 检测移动端
+function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-// 获取访问次数
-function getVisitCount() {
-    let count = parseInt(localStorage.getItem('visitCount') || '0');
-    count++;
-    localStorage.setItem('visitCount', count.toString());
-    return count;
-}
+// 初始化 PWA 提示
+function initPwaPrompt() {
+    const installBtn = document.getElementById('pwaInstall');
+    const closeBtn = document.getElementById('pwaClose');
+    const prompt = document.getElementById('pwaPrompt');
 
-// 获取天气信息
-async function loadWeather() {
-    try {
-        // 使用免费天气API（基于IP定位）
-        const response = await fetch('https://wttr.in/?format=j1');
-        const data = await response.json();
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('PWA install:', outcome);
+                deferredPrompt = null;
+            }
+            if (prompt) prompt.style.display = 'none';
+        });
+    }
 
-        const current = data.current_condition[0];
-        const temp = current.temp_C;
-        const desc = current.lang_zh[0]?.value || current.weatherDesc[0].value;
-        const weatherCode = current.weatherCode;
-
-        // 根据天气代码选择图标
-        const weatherIcons = {
-            '113': '☀️', '116': '⛅', '119': '☁️', '122': '☁️',
-            '143': '🌫️', '176': '🌧️', '179': '🌨️', '182': '🌧️',
-            '185': '🌧️', '200': '⛈️', '227': '❄️', '230': '❄️',
-            '248': '🌫️', '260': '🌫️', '263': '🌧️', '266': '🌧️',
-            '281': '🌧️', '284': '🌧️', '293': '🌧️', '296': '🌧️',
-            '299': '🌧️', '302': '🌧️', '305': '🌧️', '308': '🌧️',
-            '311': '🌧️', '314': '🌧️', '317': '🌨️', '320': '🌨️',
-            '323': '🌨️', '326': '🌨️', '329': '❄️', '332': '❄️',
-            '335': '❄️', '338': '❄️', '350': '🌧️', '353': '🌧️',
-            '356': '🌧️', '359': '🌧️', '362': '🌨️', '365': '🌨️',
-            '368': '🌨️', '371': '🌨️', '374': '🌨️', '377': '🌨️',
-            '386': '⛈️', '389': '⛈️', '392': '⛈️', '395': '❄️'
-        };
-
-        const icon = weatherIcons[weatherCode] || '🌤️';
-
-        document.querySelector('.weather-icon').textContent = icon;
-        document.getElementById('weatherTemp').textContent = `${temp}°C`;
-        document.getElementById('weatherDesc').textContent = desc;
-    } catch (error) {
-        document.getElementById('weatherDesc').textContent = '天气获取失败';
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            if (prompt) prompt.style.display = 'none';
+            localStorage.setItem('pwaDismissed', 'true');
+        });
     }
 }
 
-async function loadIpInfo() {
+// ==================== 复制链接功能 ====================
+
+// 复制到剪贴板
+async function copyToClipboard(text) {
     try {
-        const response = await fetch(`${API_BASE}/api/ip`);
-        const data = await response.json();
+        await navigator.clipboard.writeText(text);
+        showCopyToast();
+    } catch (err) {
+        // 降级方案
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showCopyToast();
+    }
+}
 
-        if (data.ip) {
-            // 设置问候语
-            document.getElementById('ipGreeting').textContent = getGreeting();
+// 显示复制成功提示
+function showCopyToast() {
+    const toast = document.getElementById('copyToast');
+    if (toast) {
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 1500);
+    }
+}
 
-            // 设置访问次数
-            const visitCount = getVisitCount();
-            document.getElementById('visitCount').textContent = `第 ${visitCount} 次访问`;
+// 设置站点卡片右键复制
+function setupCopyLinks() {
+    document.addEventListener('contextmenu', (e) => {
+        const card = e.target.closest('.site-card');
+        if (card && card.href) {
+            e.preventDefault();
+            copyToClipboard(card.href);
+        }
+    });
 
-            // 设置IP信息
-            document.getElementById('ipAddress').textContent = data.ip;
-            document.getElementById('ipLocation').textContent = data.location || '未知位置';
+    // 移动端长按复制
+    let longPressTimer = null;
+    document.addEventListener('touchstart', (e) => {
+        const card = e.target.closest('.site-card');
+        if (card && card.href) {
+            longPressTimer = setTimeout(() => {
+                e.preventDefault();
+                copyToClipboard(card.href);
+            }, 600);
+        }
+    });
 
-            const card = document.getElementById('ipCard');
-            card.style.display = 'block';
+    document.addEventListener('touchend', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
 
-            // 延迟显示动画
-            setTimeout(() => {
-                card.classList.add('show');
-            }, 100);
+    document.addEventListener('touchmove', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
+}
 
-            // 加载天气
-            loadWeather();
 
-            // 15秒后自动关闭
-            setTimeout(() => {
-                closeIpCard();
-            }, 15000);
+// ==================== 编辑模式 ====================
+
+let isEditMode = false;
+let draggedCard = null;
+let allSitesData = []; // 存储所有站点数据用于排序
+
+// 初始化编辑模式
+function initEditMode() {
+    const gearMenuBtn = document.getElementById('gearMenuBtn');
+    const gearMenu = document.getElementById('gearMenu');
+    const editModeBtn = document.getElementById('editModeBtn');
+    const passwordModal = document.getElementById('passwordModal');
+    const passwordInput = document.getElementById('editPassword');
+    const confirmBtn = document.getElementById('passwordConfirmBtn');
+    const cancelBtn = document.getElementById('passwordCancelBtn');
+    const passwordError = document.getElementById('passwordError');
+
+    if (!gearMenuBtn || !gearMenu) return;
+
+    // 齿轮菜单显示/隐藏
+    gearMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = gearMenu.style.display === 'block';
+        gearMenu.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // 点击其他地方关闭菜单
+    document.addEventListener('click', (e) => {
+        if (!gearMenu.contains(e.target) && e.target !== gearMenuBtn) {
+            gearMenu.style.display = 'none';
+        }
+    });
+
+    // 编辑排序按钮
+    if (editModeBtn) {
+        // 检查是否已解锁，更新按钮状态
+        if (sessionStorage.getItem('editModeUnlocked') === 'true') {
+            editModeBtn.classList.add('active');
+            editModeBtn.querySelector('span:last-child').textContent = '退出编辑';
+        }
+
+        editModeBtn.addEventListener('click', () => {
+            gearMenu.style.display = 'none'; // 关闭菜单
+
+            if (isEditMode) {
+                disableEditMode();
+                editModeBtn.classList.remove('active');
+                editModeBtn.querySelector('span:last-child').textContent = '编辑排序';
+            } else {
+                // 检查是否已解锁
+                if (sessionStorage.getItem('editModeUnlocked') === 'true') {
+                    enableEditMode();
+                    editModeBtn.classList.add('active');
+                    editModeBtn.querySelector('span:last-child').textContent = '退出编辑';
+                } else {
+                    passwordModal.style.display = 'flex';
+                    passwordInput.focus();
+                    passwordError.textContent = '';
+                }
+            }
+        });
+    }
+
+    // 确认密码
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', verifyEditPassword);
+    }
+    if (passwordInput) {
+        passwordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') verifyEditPassword();
+        });
+    }
+
+    // 取消
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            passwordModal.style.display = 'none';
+            passwordInput.value = '';
+            passwordError.textContent = '';
+        });
+    }
+
+    // 点击遮罩关闭
+    if (passwordModal) {
+        passwordModal.addEventListener('click', (e) => {
+            if (e.target === passwordModal) {
+                passwordModal.style.display = 'none';
+                passwordInput.value = '';
+            }
+        });
+    }
+}
+
+// 验证密码
+async function verifyEditPassword() {
+    const passwordInput = document.getElementById('editPassword');
+    const passwordError = document.getElementById('passwordError');
+    const passwordModal = document.getElementById('passwordModal');
+    const editModeBtn = document.getElementById('editModeBtn');
+
+    try {
+        const response = await fetch(`${API_BASE}/api/auth/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: passwordInput.value })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            sessionStorage.setItem('editModeUnlocked', 'true');
+            passwordModal.style.display = 'none';
+            passwordInput.value = '';
+            enableEditMode();
+            if (editModeBtn) {
+                editModeBtn.classList.add('active');
+                editModeBtn.querySelector('span:last-child').textContent = '退出编辑';
+            }
+        } else {
+            passwordError.textContent = result.error || '密码错误';
+            passwordInput.select();
         }
     } catch (error) {
-        console.error('加载IP信息失败:', error);
+        passwordError.textContent = '验证失败，请重试';
     }
 }
 
-function closeIpCard() {
-    const card = document.getElementById('ipCard');
-    card.classList.remove('show');
-    card.style.animation = 'cardSlideIn 0.4s ease reverse';
+// 启用编辑模式
+function enableEditMode() {
+    isEditMode = true;
+    document.body.classList.add('edit-mode');
 
-    setTimeout(() => {
-        card.style.display = 'none';
-    }, 400);
+    // 为所有站点卡片添加拖拽事件
+    setupDragAndDrop();
 }
 
-// 暴露给全局以便HTML调用
-window.closeIpCard = closeIpCard;
+// 禁用编辑模式
+function disableEditMode() {
+    isEditMode = false;
+    document.body.classList.remove('edit-mode');
+
+    // 移除拖拽事件
+    removeDragAndDrop();
+}
+
+// 设置拖拽事件
+function setupDragAndDrop() {
+    const container = document.getElementById('sitesGrid');
+    const cards = container.querySelectorAll('.site-card');
+
+    cards.forEach(card => {
+        card.setAttribute('draggable', 'true');
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+
+        // 阻止点击跳转
+        card.addEventListener('click', preventClickInEditMode);
+    });
+}
+
+// 移除拖拽事件
+function removeDragAndDrop() {
+    const container = document.getElementById('sitesGrid');
+    const cards = container.querySelectorAll('.site-card');
+
+    cards.forEach(card => {
+        card.removeAttribute('draggable');
+        card.removeEventListener('dragstart', handleDragStart);
+        card.removeEventListener('dragend', handleDragEnd);
+        card.removeEventListener('dragover', handleDragOver);
+        card.removeEventListener('dragleave', handleDragLeave);
+        card.removeEventListener('drop', handleDrop);
+        card.removeEventListener('click', preventClickInEditMode);
+    });
+}
+
+// 阻止编辑模式下的点击跳转
+function preventClickInEditMode(e) {
+    if (isEditMode) {
+        e.preventDefault();
+    }
+}
+
+// 拖拽开始
+function handleDragStart(e) {
+    draggedCard = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+// 拖拽结束
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    document.querySelectorAll('.site-card').forEach(card => {
+        card.classList.remove('drag-over');
+    });
+    draggedCard = null;
+}
+
+// 拖拽经过
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+
+    if (this !== draggedCard) {
+        this.classList.add('drag-over');
+    }
+    return false;
+}
+
+// 拖拽离开
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+// 放下
+async function handleDrop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (draggedCard !== this) {
+        const container = document.getElementById('sitesGrid');
+        const cards = Array.from(container.querySelectorAll('.site-card'));
+        const draggedIndex = cards.indexOf(draggedCard);
+        const targetIndex = cards.indexOf(this);
+
+        // 交换位置
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedCard, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedCard, this);
+        }
+
+        // 保存新顺序
+        await saveNewOrder();
+    }
+
+    this.classList.remove('drag-over');
+    return false;
+}
+
+// 保存新顺序到服务器
+async function saveNewOrder() {
+    const container = document.getElementById('sitesGrid');
+    const cards = Array.from(container.querySelectorAll('.site-card'));
+
+    const order = cards.map((card, index) => ({
+        id: parseInt(card.dataset.siteId),
+        sort_order: index
+    })).filter(item => !isNaN(item.id));
+
+    if (order.length === 0) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/sites/reorder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            console.error('排序保存失败:', result.message);
+        }
+    } catch (error) {
+        console.error('排序保存失败:', error);
+    }
+}
+
+// 在初始化时调用
+document.addEventListener('DOMContentLoaded', () => {
+    initEditMode();
+    initQuickAdd();
+});
+
+// ==================== 快速添加功能 ====================
+
+// 存储待执行的回调（验证密码后执行）
+let pendingQuickAddAction = null;
+
+function initQuickAdd() {
+    const quickAddBtn = document.getElementById('quickAddBtn');
+    const quickAddModal = document.getElementById('quickAddModal');
+    const quickAddName = document.getElementById('quickAddName');
+    const quickAddUrl = document.getElementById('quickAddUrl');
+    const quickAddLogo = document.getElementById('quickAddLogo');
+    const quickAddFetch1 = document.getElementById('quickAddFetch1');
+    const quickAddFetch2 = document.getElementById('quickAddFetch2');
+    const quickAddDefault = document.getElementById('quickAddDefault');
+    const quickAddLogoPreview = document.getElementById('quickAddLogoPreview');
+    const quickAddCancelBtn = document.getElementById('quickAddCancelBtn');
+    const quickAddConfirmBtn = document.getElementById('quickAddConfirmBtn');
+    const quickAddError = document.getElementById('quickAddError');
+    const quickAddCategory = document.getElementById('quickAddCategory');
+    const gearMenu = document.getElementById('gearMenu');
+    const passwordModal = document.getElementById('passwordModal');
+
+    if (!quickAddBtn || !quickAddModal) return;
+
+    // 点击快速添加按钮
+    quickAddBtn.addEventListener('click', () => {
+        gearMenu.style.display = 'none';
+
+        // 检查是否已验证
+        if (sessionStorage.getItem('editModeUnlocked') === 'true') {
+            openQuickAddModal();
+        } else {
+            // 设置回调，验证成功后打开快速添加弹窗
+            pendingQuickAddAction = openQuickAddModal;
+            passwordModal.style.display = 'flex';
+            document.getElementById('editPassword').focus();
+            document.getElementById('passwordError').textContent = '';
+        }
+    });
+
+    // 打开快速添加弹窗
+    function openQuickAddModal() {
+        quickAddName.value = '';
+        quickAddUrl.value = '';
+        quickAddLogo.value = '';
+        quickAddLogoPreview.innerHTML = '';
+        quickAddError.textContent = '';
+        // 加载分类选项
+        loadQuickAddCategories();
+        quickAddModal.style.display = 'flex';
+        quickAddName.focus();
+    }
+
+    // 加载分类到下拉框
+    async function loadQuickAddCategories() {
+        try {
+            const response = await fetch(`${API_BASE}/api/categories`);
+            const data = await response.json();
+            if (data.success && data.data) {
+                quickAddCategory.innerHTML = '<option value="">选择分类...</option>' +
+                    data.data.map(cat => `<option value="${cat.id}">${cat.icon || ''} ${cat.name}</option>`).join('');
+                // 默认选中当前分类
+                if (currentCategory && currentCategory !== 'all') {
+                    quickAddCategory.value = currentCategory;
+                }
+            }
+        } catch (error) {
+            console.error('加载分类失败:', error);
+        }
+    }
+
+    // 关闭快速添加弹窗
+    function closeQuickAddModal() {
+        quickAddModal.style.display = 'none';
+    }
+
+    // 获取Logo - Google源
+    quickAddFetch1.addEventListener('click', () => {
+        const url = quickAddUrl.value.trim();
+        if (!url) {
+            quickAddError.textContent = '请先输入网站URL';
+            return;
+        }
+        try {
+            const domain = new URL(url).hostname;
+            const logo = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
+            quickAddLogo.value = logo;
+            updateQuickAddPreview(logo);
+            quickAddError.textContent = '';
+        } catch {
+            quickAddError.textContent = 'URL格式无效';
+        }
+    });
+
+    // 获取Logo - toolb.cn源
+    quickAddFetch2.addEventListener('click', () => {
+        const url = quickAddUrl.value.trim();
+        if (!url) {
+            quickAddError.textContent = '请先输入网站URL';
+            return;
+        }
+        try {
+            const domain = new URL(url).hostname;
+            const logo = `https://toolb.cn/favicon/${domain}`;
+            quickAddLogo.value = logo;
+            updateQuickAddPreview(logo);
+            quickAddError.textContent = '';
+        } catch {
+            quickAddError.textContent = 'URL格式无效';
+        }
+    });
+
+    // 使用默认图标
+    if (quickAddDefault) {
+        quickAddDefault.addEventListener('click', () => {
+            quickAddLogo.value = DEFAULT_ICON;
+            updateQuickAddPreview(DEFAULT_ICON);
+            quickAddError.textContent = '';
+        });
+    }
+
+    // Logo输入变化时更新预览
+    quickAddLogo.addEventListener('input', (e) => {
+        updateQuickAddPreview(e.target.value);
+    });
+
+    function updateQuickAddPreview(url) {
+        if (url && url.trim()) {
+            quickAddLogoPreview.innerHTML = `<img src="${url}" alt="Logo" onerror="this.style.display='none'">`;
+        } else {
+            quickAddLogoPreview.innerHTML = '';
+        }
+    }
+
+    // 取消按钮
+    quickAddCancelBtn.addEventListener('click', closeQuickAddModal);
+
+    // 点击遮罩关闭
+    quickAddModal.addEventListener('click', (e) => {
+        if (e.target === quickAddModal) {
+            closeQuickAddModal();
+        }
+    });
+
+    // 确认添加
+    quickAddConfirmBtn.addEventListener('click', handleQuickAdd);
+    quickAddName.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') quickAddUrl.focus();
+    });
+    quickAddUrl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleQuickAdd();
+    });
+
+    async function handleQuickAdd() {
+        const name = quickAddName.value.trim();
+        const url = quickAddUrl.value.trim();
+        let logo = quickAddLogo.value.trim();
+
+        if (!name) {
+            quickAddError.textContent = '请输入网站名称';
+            quickAddName.focus();
+            return;
+        }
+        if (!url) {
+            quickAddError.textContent = '请输入网站URL';
+            quickAddUrl.focus();
+            return;
+        }
+
+        // 如果没有logo，自动获取Google Favicon
+        if (!logo) {
+            try {
+                const domain = new URL(url).hostname;
+                logo = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
+            } catch {
+                quickAddError.textContent = 'URL格式无效';
+                return;
+            }
+        }
+
+        quickAddConfirmBtn.disabled = true;
+        quickAddConfirmBtn.textContent = '添加中...';
+
+        try {
+            const response = await fetch(`${API_BASE}/api/sites`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    url,
+                    logo,
+                    category_id: quickAddCategory.value || null,
+                    sort_order: 0
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeQuickAddModal();
+                // 刷新当前分类列表
+                loadSites(currentCategory, currentSearchTerm);
+                showQuickAddToast('✅ 网站添加成功');
+            } else {
+                quickAddError.textContent = result.message || '添加失败';
+            }
+        } catch (error) {
+            quickAddError.textContent = '网络错误，请重试';
+        } finally {
+            quickAddConfirmBtn.disabled = false;
+            quickAddConfirmBtn.textContent = '添加';
+        }
+    }
+}
+
+// 显示简易Toast提示
+function showQuickAddToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        z-index: 3000;
+        animation: fadeInUp 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'fadeInUp 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
+
+// 修改原有的验证密码函数，支持快速添加回调
+const originalVerifyEditPassword = verifyEditPassword;
+verifyEditPassword = async function () {
+    const passwordInput = document.getElementById('editPassword');
+    const passwordError = document.getElementById('passwordError');
+    const passwordModal = document.getElementById('passwordModal');
+    const editModeBtn = document.getElementById('editModeBtn');
+
+    try {
+        const response = await fetch(`${API_BASE}/api/auth/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: passwordInput.value })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            sessionStorage.setItem('editModeUnlocked', 'true');
+            passwordModal.style.display = 'none';
+            passwordInput.value = '';
+
+            // 如果有待执行的快速添加回调
+            if (pendingQuickAddAction) {
+                pendingQuickAddAction();
+                pendingQuickAddAction = null;
+            } else {
+                enableEditMode();
+                if (editModeBtn) {
+                    editModeBtn.classList.add('active');
+                    editModeBtn.querySelector('span:last-child').textContent = '退出编辑';
+                }
+            }
+        } else {
+            passwordError.textContent = result.error || '密码错误';
+            passwordInput.select();
+        }
+    } catch (error) {
+        passwordError.textContent = '验证失败，请重试';
+    }
+};
