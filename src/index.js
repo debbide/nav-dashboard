@@ -879,100 +879,78 @@ async function importData(request, env, headers) {
             return jsonResponse({ success: false, message: '无效的数据格式：categories 和 sites 必须是数组' }, 400, headers);
         }
 
-        console.log(`开始导入: ${data.categories.length} 个分类, ${data.sites.length} 个站点`);
+        // 验证每个分类和站点的必要字段
+        for (const cat of data.categories) {
+            if (!cat.name) {
+                return jsonResponse({ success: false, message: '分类数据缺少 name 字段' }, 400, headers);
+            }
+        }
+        for (const site of data.sites) {
+            if (!site.name || !site.url) {
+                return jsonResponse({ success: false, message: '站点数据缺少 name 或 url 字段' }, 400, headers);
+            }
+        }
 
-        // 使用 D1 batch 操作实现原子性
-        const statements = [];
+        console.log(`数据验证通过: ${data.categories.length} 个分类, ${data.sites.length} 个站点`);
+
+        // 构建所有 SQL 语句
+        const allStatements = [];
 
         // 1. 清空现有数据
-        statements.push(env.DB.prepare('DELETE FROM sites'));
-        statements.push(env.DB.prepare('DELETE FROM categories'));
-        statements.push(env.DB.prepare("DELETE FROM settings WHERE key != 'admin_password'"));
+        allStatements.push(env.DB.prepare('DELETE FROM sites'));
+        allStatements.push(env.DB.prepare('DELETE FROM categories'));
+        allStatements.push(env.DB.prepare("DELETE FROM settings WHERE key != 'admin_password'"));
 
-        // 执行清空操作
-        await env.DB.batch(statements);
-        console.log('已清空现有数据');
+        // 2. 插入分类（按顺序，使用递增 ID）
+        for (let i = 0; i < data.categories.length; i++) {
+            const cat = data.categories[i];
+            allStatements.push(
+                env.DB.prepare(`INSERT INTO categories (id, name, icon, color, sort_order) VALUES (?, ?, ?, ?, ?)`)
+                    .bind(i + 1, cat.name || '未命名分类', cat.icon || '📁', cat.color || '#ff9a56', cat.sort_order || 0)
+            );
+        }
 
-        // 2. 导入分类（需要逐个插入以获取新 ID）
+        // 3. 创建分类 ID 映射（旧 ID -> 新 ID）
         const categoryIdMap = {};
-        for (const cat of data.categories) {
-            try {
-                const result = await env.DB.prepare(`
-                    INSERT INTO categories (name, icon, color, sort_order) VALUES (?, ?, ?, ?)
-                `).bind(
-                    cat.name || '未命名分类',
-                    cat.icon || '📁',
-                    cat.color || '#ff9a56',
-                    cat.sort_order || 0
-                ).run();
-
-                // D1 返回的是 meta.last_row_id
-                const newId = result.meta?.last_row_id;
-                if (newId) {
-                    categoryIdMap[cat.id] = newId;
-                }
-                console.log(`导入分类: ${cat.name}, 原ID: ${cat.id}, 新ID: ${newId}`);
-            } catch (catError) {
-                console.error(`导入分类失败: ${cat.name}`, catError);
-            }
+        for (let i = 0; i < data.categories.length; i++) {
+            categoryIdMap[data.categories[i].id] = i + 1;
         }
 
-        // 3. 导入站点
-        let successCount = 0;
-        let failCount = 0;
+        // 4. 插入站点
         for (const site of data.sites) {
-            try {
-                // 映射分类 ID
-                let newCategoryId = null;
-                if (site.category_id) {
-                    newCategoryId = categoryIdMap[site.category_id] || null;
-                }
-
-                await env.DB.prepare(`
-                    INSERT INTO sites (name, url, description, logo, category_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)
-                `).bind(
-                    site.name || '未命名站点',
-                    site.url || '',
-                    site.description || '',
-                    site.logo || '',
-                    newCategoryId,
-                    site.sort_order || 0
-                ).run();
-                successCount++;
-            } catch (siteError) {
-                console.error(`导入站点失败: ${site.name}`, siteError);
-                failCount++;
-            }
+            const newCategoryId = site.category_id ? (categoryIdMap[site.category_id] || null) : null;
+            allStatements.push(
+                env.DB.prepare(`INSERT INTO sites (name, url, description, logo, category_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)`)
+                    .bind(site.name || '未命名站点', site.url || '', site.description || '', site.logo || '', newCategoryId, site.sort_order || 0)
+            );
         }
 
-        // 4. 导入设置
+        // 5. 插入设置
         if (data.settings && Array.isArray(data.settings)) {
             for (const setting of data.settings) {
                 if (setting.key && setting.key !== 'admin_password') {
-                    try {
-                        await env.DB.prepare(`
-                            INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
-                        `).bind(setting.key, setting.value || '').run();
-                    } catch (settingError) {
-                        console.error(`导入设置失败: ${setting.key}`, settingError);
-                    }
+                    allStatements.push(
+                        env.DB.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`)
+                            .bind(setting.key, setting.value || '')
+                    );
                 }
             }
         }
 
-        const message = failCount > 0
-            ? `导入完成: ${data.categories.length} 个分类, ${successCount} 个站点成功, ${failCount} 个站点失败`
-            : `导入成功: ${data.categories.length} 个分类, ${successCount} 个站点`;
+        // 6. 使用 batch 执行所有语句（原子操作）
+        console.log(`准备执行 ${allStatements.length} 条 SQL 语句`);
+        await env.DB.batch(allStatements);
 
         return jsonResponse({
             success: true,
-            message: message
+            message: `导入成功: ${data.categories.length} 个分类, ${data.sites.length} 个站点`
         }, 200, headers);
     } catch (error) {
         console.error('导入失败:', error);
         return jsonResponse({ success: false, message: '导入失败: ' + error.message }, 500, headers);
     }
 }
+
 
 // 书签导入
 async function importBookmarks(request, env, headers) {
