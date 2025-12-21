@@ -299,6 +299,13 @@ function setupInfiniteScroll() {
     const trigger = document.getElementById('loadMoreTrigger');
     if (!trigger) return;
 
+    // 允许点击加载更多（兜底方案）
+    trigger.addEventListener('click', () => {
+        if (hasMore && !isLoading) {
+            loadMoreSites();
+        }
+    });
+
     if ('IntersectionObserver' in window) {
         const scrollObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading) {
@@ -314,7 +321,7 @@ function setupInfiniteScroll() {
 function updateLoadMoreTrigger() {
     const trigger = document.getElementById('loadMoreTrigger');
     if (trigger) {
-        trigger.style.display = hasMore ? 'block' : 'none';
+        trigger.style.display = hasMore ? 'flex' : 'none';
     }
 }
 
