@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="å¯¼èˆªç«™">
-  <title>å¯¼èˆªç«™</title>
+  <meta name="apple-mobile-web-app-title" content="µ¼º½Õ¾">
+  <title>µ¼º½Õ¾</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="manifest" href="/manifest.json">
@@ -15,28 +15,28 @@
 </head>
 
 <body>
-  <!-- æš—è‰²æ¨¡å¼åˆ‡æ¢ -->
-  <button id="themeToggle" class="theme-toggle" title="åˆ‡æ¢ä¸»é¢˜">ðŸŒ™</button>
+  <!-- °µÉ«Ä£Ê½ÇÐ»» -->
+  <button id="themeToggle" class="theme-toggle" title="ÇÐ»»Ö÷Ìâ">??</button>
 
-  <!-- PWA å®‰è£…æç¤º -->
+  <!-- PWA °²×°ÌáÊ¾ -->
   <div id="pwaPrompt" class="pwa-prompt" style="display: none;">
-    <span>ðŸ“² æ·»åŠ åˆ°ä¸»å±å¹•ï¼ŒèŽ·å¾— App ä½“éªŒ</span>
-    <button id="pwaInstall" class="pwa-btn">å®‰è£…</button>
-    <button id="pwaClose" class="pwa-close">Ã—</button>
+    <span>?? Ìí¼Óµ½Ö÷ÆÁÄ»£¬»ñµÃ App ÌåÑé</span>
+    <button id="pwaInstall" class="pwa-btn">°²×°</button>
+    <button id="pwaClose" class="pwa-close">¡Á</button>
   </div>
 
-  <!-- å¤åˆ¶æˆåŠŸæç¤º -->
-  <div id="copyToast" class="copy-toast">âœ“ é“¾æŽ¥å·²å¤åˆ¶</div>
+  <!-- ¸´ÖÆ³É¹¦ÌáÊ¾ -->
+  <div id="copyToast" class="copy-toast">? Á´½ÓÒÑ¸´ÖÆ</div>
 
-  <!-- å¯†ç éªŒè¯å¼¹çª— -->
+  <!-- ÃÜÂëÑéÖ¤µ¯´° -->
   <div id="passwordModal" class="password-modal" style="display: none;">
     <div class="password-modal-content glass-effect">
-      <h3>ðŸ” è§£é”ç¼–è¾‘æ¨¡å¼</h3>
-      <p>è¾“å…¥ç®¡ç†å¯†ç ä»¥å¯ç”¨æ‹–æ‹½æŽ’åº</p>
-      <input type="password" id="editPassword" placeholder="è¯·è¾“å…¥å¯†ç " autocomplete="off">
+      <h3>?? ½âËø±à¼­Ä£Ê½</h3>
+      <p>ÊäÈë¹ÜÀíÃÜÂëÒÔÆôÓÃÍÏ×§ÅÅÐò</p>
+      <input type="password" id="editPassword" placeholder="ÇëÊäÈëÃÜÂë" autocomplete="off">
       <div class="password-modal-btns">
-        <button id="passwordCancelBtn" class="btn-secondary">å–æ¶ˆ</button>
-        <button id="passwordConfirmBtn" class="btn-primary">ç¡®è®¤</button>
+        <button id="passwordCancelBtn" class="btn-secondary">È¡Ïû</button>
+        <button id="passwordConfirmBtn" class="btn-primary">È·ÈÏ</button>
       </div>
       <div id="passwordError" class="password-error"></div>
     </div>
@@ -44,33 +44,33 @@
 
   <div class="container">
 
-    <!-- å¿«é€Ÿæ·»åŠ å¼¹çª— -->
+    <!-- ¿ìËÙÌí¼Óµ¯´° -->
     <div id="quickAddModal" class="password-modal" style="display: none;">
       <div class="password-modal-content glass-effect quick-add-modal">
-        <h3>âž• å¿«é€Ÿæ·»åŠ ç½‘ç«™</h3>
-        <input type="text" id="quickAddName" placeholder="ç½‘ç«™åç§°" autocomplete="off">
+        <h3>? ¿ìËÙÌí¼ÓÍøÕ¾</h3>
+        <input type="text" id="quickAddName" placeholder="ÍøÕ¾Ãû³Æ" autocomplete="off">
         <input type="url" id="quickAddUrl" placeholder="https://..." autocomplete="off">
         <div class="quick-add-logo-row">
-          <input type="text" id="quickAddLogo" placeholder="å›¾æ ‡URLï¼ˆå¯é€‰ï¼‰" autocomplete="off">
-          <button type="button" id="quickAddFetch1" class="btn-secondary btn-sm" title="Googleæº"><img
+          <input type="text" id="quickAddLogo" placeholder="Í¼±êURL£¨¿ÉÑ¡£©" autocomplete="off">
+          <button type="button" id="quickAddFetch1" class="btn-secondary btn-sm" title="GoogleÔ´"><img
               src="https://www.google.com/favicon.ico" alt="G" style="width:16px;height:16px"></button>
-          <button type="button" id="quickAddFetch2" class="btn-secondary btn-sm" title="toolb.cnæº"><img
+          <button type="button" id="quickAddFetch2" class="btn-secondary btn-sm" title="toolb.cnÔ´"><img
               src="https://toolb.cn/favicon.ico" alt="T" style="width:16px;height:16px"></button>
-          <button type="button" id="quickAddDefault" class="btn-secondary btn-sm" title="é»˜è®¤å›¾æ ‡">ðŸŒ</button>
+          <button type="button" id="quickAddDefault" class="btn-secondary btn-sm" title="Ä¬ÈÏÍ¼±ê">??</button>
         </div>
         <div class="quick-add-logo-preview" id="quickAddLogoPreview"></div>
         <select id="quickAddCategory" class="quick-add-select">
-          <option value="">é€‰æ‹©åˆ†ç±»...</option>
+          <option value="">Ñ¡Ôñ·ÖÀà...</option>
         </select>
         <div class="password-modal-btns">
-          <button id="quickAddCancelBtn" class="btn-secondary">å–æ¶ˆ</button>
-          <button id="quickAddConfirmBtn" class="btn-primary">æ·»åŠ </button>
+          <button id="quickAddCancelBtn" class="btn-secondary">È¡Ïû</button>
+          <button id="quickAddConfirmBtn" class="btn-primary">Ìí¼Ó</button>
         </div>
         <div id="quickAddError" class="password-error"></div>
       </div>
     </div>
 
-    <!-- é¡¶æ ï¼šæœç´¢å¼•æ“Ž -->
+    <!-- ¶¥À¸£ºËÑË÷ÒýÇæ -->
     <header class="header-simple">
       <div class="search-box-center glass-effect">
         <div class="search-engines">
@@ -86,48 +86,48 @@
         </div>
         <div class="search-input-wrapper">
           <input type="text" id="searchInput" class="search-input" placeholder=" " autocomplete="off">
-          <label for="searchInput" class="search-label">æœç´¢ç«™ç‚¹...</label>
+          <label for="searchInput" class="search-label">ËÑË÷Õ¾µã...</label>
           <div id="searchSuggestions" class="search-suggestions"></div>
         </div>
-        <button id="searchBtn" class="search-btn">ðŸ”</button>
+        <button id="searchBtn" class="search-btn">??</button>
       </div>
-      <!-- é½¿è½®èœå• -->
+      <!-- ³ÝÂÖ²Ëµ¥ -->
       <div class="gear-menu-wrapper">
-        <button id="gearMenuBtn" class="gear-btn" title="èœå•">âš™ï¸</button>
+        <button id="gearMenuBtn" class="gear-btn" title="²Ëµ¥">??</button>
         <div id="gearMenu" class="gear-dropdown" style="display: none;">
           <button id="quickAddBtn" class="gear-menu-item">
-            <span class="gear-menu-icon">âž•</span>
-            <span>å¿«é€Ÿæ·»åŠ </span>
+            <span class="gear-menu-icon">?</span>
+            <span>¿ìËÙÌí¼Ó</span>
           </button>
           <button id="editModeBtn" class="gear-menu-item">
-            <span class="gear-menu-icon">ðŸ”</span>
-            <span>ç¼–è¾‘æŽ’åº</span>
+            <span class="gear-menu-icon">??</span>
+            <span>±à¼­ÅÅÐò</span>
           </button>
           <a href="/admin.html" class="gear-menu-item">
-            <span class="gear-menu-icon">âš™ï¸</span>
-            <span>ç®¡ç†åŽå°</span>
+            <span class="gear-menu-icon">??</span>
+            <span>¹ÜÀíºóÌ¨</span>
           </a>
         </div>
       </div>
     </header>
 
-    <!-- ä¸»å¸ƒå±€ -->
+    <!-- Ö÷²¼¾Ö -->
     <div class="layout-wrapper">
-      <!-- å·¦ä¾§åˆ†ç±»ä¾§è¾¹æ  -->
+      <!-- ×ó²à·ÖÀà²à±ßÀ¸ -->
       <aside class="sidebar">
         <div id="categoriesList" class="categories-sidebar">
-          <!-- åŠ¨æ€åŠ è½½åˆ†ç±» -->
+          <!-- ¶¯Ì¬¼ÓÔØ·ÖÀà -->
         </div>
       </aside>
 
-      <!-- å³ä¾§å†…å®¹åŒº -->
+      <!-- ÓÒ²àÄÚÈÝÇø -->
       <div class="content-wrapper">
         <main class="main-content">
           <div id="sitesGrid" class="sites-grid">
-            <!-- ç”± JavaScript åŠ¨æ€ç”Ÿæˆéª¨æž¶å±å’Œç«™ç‚¹å¡ç‰‡ -->
+            <!-- ÓÉ JavaScript ¶¯Ì¬Éú³É¹Ç¼ÜÆÁºÍÕ¾µã¿¨Æ¬ -->
           </div>
 
-          <!-- æ— é™æ»šåŠ¨è§¦å‘å™¨ -->
+          <!-- ÎÞÏÞ¹ö¶¯´¥·¢Æ÷ -->
           <div id="loadMoreTrigger" class="load-more-trigger">
             <div class="loading-dots">
               <span></span><span></span><span></span>
@@ -135,10 +135,10 @@
           </div>
 
           <div id="emptyState" class="empty-state" style="display: none;">
-            <div class="empty-icon">ðŸ“­</div>
-            <h3>æš‚æ— ç«™ç‚¹</h3>
-            <p>è¿˜æ²¡æœ‰æ·»åŠ ä»»ä½•ç«™ç‚¹</p>
-            <a href="/admin.html" class="btn-primary">å‰å¾€ç®¡ç†åŽå°</a>
+            <div class="empty-icon">??</div>
+            <h3>ÔÝÎÞÕ¾µã</h3>
+            <p>»¹Ã»ÓÐÌí¼ÓÈÎºÎÕ¾µã</p>
+            <a href="/admin.html" class="btn-primary">Ç°Íù¹ÜÀíºóÌ¨</a>
           </div>
         </main>
       </div>

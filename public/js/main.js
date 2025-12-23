@@ -241,11 +241,11 @@ const DEFAULT_ICON = '/default-icon.png';
 function createSiteCard(site) {
     const logo = site.logo || DEFAULT_ICON;
 
-    const card = document.createElement('a');
-    card.href = site.url;
-    card.target = '_blank';
+    const card = document.createElement('div');
     card.className = 'site-card glass-effect';
-    card.dataset.siteId = site.id; // 添加站点ID用于拖拽排序
+    card.dataset.siteId = site.id;
+    card.dataset.tooltip = site.name;
+    card.dataset.url = site.url;
 
     card.innerHTML = `
         <div class="logo-wrapper">
@@ -256,6 +256,11 @@ function createSiteCard(site) {
         </div>
         <span class="site-name">${site.name}</span>
     `;
+
+    // 点击跳转
+    card.addEventListener('click', () => {
+        window.open(site.url, '_blank');
+    });
 
     return card;
 }
@@ -504,9 +509,65 @@ document.addEventListener('DOMContentLoaded', () => {
     setupKeyboardShortcuts();
     initPwaPrompt();
     setupCopyLinks();
+    setupTooltip();
 });
 
-// ==================== 快捷键 ====================
+// ==================== 自定义 Tooltip ====================
+function setupTooltip() {
+    // 创建 tooltip 元素
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.style.cssText = `
+        position: fixed;
+        padding: 8px 12px;
+        background: rgba(30, 41, 59, 0.95);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 8px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 99999;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    `;
+    document.body.appendChild(tooltip);
+
+    // 监听悬停事件
+    document.addEventListener('mouseover', (e) => {
+        const card = e.target.closest('.site-card');
+        if (card && card.dataset.tooltip) {
+            // 检测名称是否被截断
+            const nameEl = card.querySelector('.site-name');
+            if (nameEl && nameEl.scrollWidth > nameEl.clientWidth) {
+                tooltip.textContent = card.dataset.tooltip;
+                tooltip.style.opacity = '1';
+            }
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const card = e.target.closest('.site-card');
+        if (card) {
+            tooltip.style.opacity = '0';
+        }
+    });
+
+    // 更新 tooltip 位置
+    document.addEventListener('mousemove', (e) => {
+        if (tooltip.style.opacity === '1') {
+            const x = e.clientX;
+            const y = e.clientY - 40;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+        }
+    });
+}
 
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
@@ -659,9 +720,9 @@ function showCopyToast() {
 function setupCopyLinks() {
     document.addEventListener('contextmenu', (e) => {
         const card = e.target.closest('.site-card');
-        if (card && card.href) {
+        if (card && card.dataset.url) {
             e.preventDefault();
-            copyToClipboard(card.href);
+            copyToClipboard(card.dataset.url);
         }
     });
 
@@ -669,10 +730,10 @@ function setupCopyLinks() {
     let longPressTimer = null;
     document.addEventListener('touchstart', (e) => {
         const card = e.target.closest('.site-card');
-        if (card && card.href) {
+        if (card && card.dataset.url) {
             longPressTimer = setTimeout(() => {
                 e.preventDefault();
-                copyToClipboard(card.href);
+                copyToClipboard(card.dataset.url);
             }, 600);
         }
     });

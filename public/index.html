@@ -1,21 +1,21 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>å¯¼èˆªç«™</title>
+  <title>µ¼º½Õ¾</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/style.css?v=9">
 </head>
 
 <body>
-  <!-- æš—è‰²æ¨¡å¼åˆ‡æ¢ -->
-  <button id="themeToggle" class="theme-toggle" title="åˆ‡æ¢ä¸»é¢˜">ðŸŒ™</button>
+  <!-- °µÉ«Ä£Ê½ÇÐ»» -->
+  <button id="themeToggle" class="theme-toggle" title="ÇÐ»»Ö÷Ìâ">??</button>
 
   <div class="container">
 
-    <!-- é¡¶æ ï¼šæœç´¢å¼•æ“Ž -->
+    <!-- ¶¥À¸£ºËÑË÷ÒýÇæ -->
     <header class="header-simple">
       <div class="search-box-center glass-effect">
         <div class="search-engines">
@@ -26,36 +26,36 @@
             <img src="https://www.bing.com/favicon.ico" alt="Bing">
           </button>
           <button type="button" class="engine-btn" data-engine="github" title="GitHub">
-            <img src="https://github.com/favicon.ico" alt="GitHub">
+            <img src="https://github.githubassets.com/favicons/favicon.svg" alt="GitHub">
           </button>
         </div>
         <div class="search-input-wrapper">
           <input type="text" id="searchInput" class="search-input" placeholder=" " autocomplete="off">
-          <label for="searchInput" class="search-label">æœç´¢ç«™ç‚¹...</label>
+          <label for="searchInput" class="search-label">ËÑË÷Õ¾µã...</label>
           <div id="searchSuggestions" class="search-suggestions"></div>
         </div>
-        <button id="searchBtn" class="search-btn">ðŸ”</button>
+        <button id="searchBtn" class="search-btn">??</button>
       </div>
-      <a href="/admin.html" class="admin-link" title="ç®¡ç†">âš™ï¸</a>
+      <a href="/admin.html" class="admin-link" title="¹ÜÀí">??</a>
     </header>
 
-    <!-- ä¸»å¸ƒå±€ -->
+    <!-- Ö÷²¼¾Ö -->
     <div class="layout-wrapper">
-      <!-- å·¦ä¾§åˆ†ç±»ä¾§è¾¹æ  -->
+      <!-- ×ó²à·ÖÀà²à±ßÀ¸ -->
       <aside class="sidebar">
         <div id="categoriesList" class="categories-sidebar">
-          <!-- åŠ¨æ€åŠ è½½åˆ†ç±» -->
+          <!-- ¶¯Ì¬¼ÓÔØ·ÖÀà -->
         </div>
       </aside>
 
-      <!-- å³ä¾§å†…å®¹åŒº -->
+      <!-- ÓÒ²àÄÚÈÝÇø -->
       <div class="content-wrapper">
         <main class="main-content">
           <div id="sitesGrid" class="sites-grid">
-            <!-- ç”± JavaScript åŠ¨æ€ç”Ÿæˆéª¨æž¶å±å’Œç«™ç‚¹å¡ç‰‡ -->
+            <!-- ÓÉ JavaScript ¶¯Ì¬Éú³É¹Ç¼ÜÆÁºÍÕ¾µã¿¨Æ¬ -->
           </div>
 
-          <!-- æ— é™æ»šåŠ¨è§¦å‘å™¨ -->
+          <!-- ÎÞÏÞ¹ö¶¯´¥·¢Æ÷ -->
           <div id="loadMoreTrigger" class="load-more-trigger">
             <div class="loading-dots">
               <span></span><span></span><span></span>
@@ -63,10 +63,10 @@
           </div>
 
           <div id="emptyState" class="empty-state" style="display: none;">
-            <div class="empty-icon">ðŸ“­</div>
-            <h3>æš‚æ— ç«™ç‚¹</h3>
-            <p>è¿˜æ²¡æœ‰æ·»åŠ ä»»ä½•ç«™ç‚¹</p>
-            <a href="/admin.html" class="btn-primary">å‰å¾€ç®¡ç†åŽå°</a>
+            <div class="empty-icon">??</div>
+            <h3>ÔÝÎÞÕ¾µã</h3>
+            <p>»¹Ã»ÓÐÌí¼ÓÈÎºÎÕ¾µã</p>
+            <a href="/admin.html" class="btn-primary">Ç°Íù¹ÜÀíºóÌ¨</a>
           </div>
         </main>
       </div>
@@ -85,30 +85,30 @@
   <!-- IP Info Card -->
   <div id="ipCard" class="ip-card glass-effect" style="display: none;">
     <div class="ip-header">
-      <span class="ip-greeting" id="ipGreeting">ðŸ‘‹ æ¬¢è¿Žå…‰ä¸´</span>
-      <button class="ip-close" onclick="closeIpCard()">Ã—</button>
+      <span class="ip-greeting" id="ipGreeting">?? »¶Ó­¹âÁÙ</span>
+      <button class="ip-close" onclick="closeIpCard()">¡Á</button>
     </div>
     <div class="ip-stats">
-      <span id="visitCount">ç¬¬ 1 æ¬¡è®¿é—®</span>
+      <span id="visitCount">µÚ 1 ´Î·ÃÎÊ</span>
     </div>
     <div class="ip-content-compact">
       <div class="ip-info-row">
-        <span class="ip-icon bounce">ðŸ“</span>
-        <span id="ipLocation">åŠ è½½ä¸­...</span>
+        <span class="ip-icon bounce">??</span>
+        <span id="ipLocation">¼ÓÔØÖÐ...</span>
       </div>
       <div class="ip-info-row">
-        <span class="ip-icon pulse">ðŸŒ</span>
+        <span class="ip-icon pulse">??</span>
         <span id="ipAddress">...</span>
       </div>
     </div>
     <div class="ip-weather" id="ipWeather">
-      <span class="weather-icon">ðŸŒ¤ï¸</span>
-      <span class="weather-temp" id="weatherTemp">--Â°C</span>
-      <span class="weather-desc" id="weatherDesc">èŽ·å–å¤©æ°”ä¸­...</span>
+      <span class="weather-icon">???</span>
+      <span class="weather-temp" id="weatherTemp">--¡ãC</span>
+      <span class="weather-desc" id="weatherDesc">»ñÈ¡ÌìÆøÖÐ...</span>
     </div>
   </div>
 
-  <script src="/js/main.js?v=2"></script>
+  <script src="/js/main.js?v=3"></script>
 </body>
 
 </html>
