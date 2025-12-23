@@ -541,8 +541,12 @@ function setupTooltip() {
     document.addEventListener('mouseover', (e) => {
         const card = e.target.closest('.site-card');
         if (card && card.dataset.tooltip) {
-            tooltip.textContent = card.dataset.tooltip;
-            tooltip.style.opacity = '1';
+            // 检测名称是否被截断
+            const nameEl = card.querySelector('.site-name');
+            if (nameEl && nameEl.scrollWidth > nameEl.clientWidth) {
+                tooltip.textContent = card.dataset.tooltip;
+                tooltip.style.opacity = '1';
+            }
         }
     });
 
