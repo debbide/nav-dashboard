@@ -254,7 +254,7 @@ function createSiteCard(site) {
                  data-src="${logo}" 
                  alt="${site.name}">
         </div>
-        <span class="site-name" title="${site.name}">${site.name}</span>
+        <span class="site-name" data-tooltip="${site.name}">${site.name}</span>
     `;
 
     return card;
