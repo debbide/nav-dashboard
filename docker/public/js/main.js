@@ -509,9 +509,61 @@ document.addEventListener('DOMContentLoaded', () => {
     setupKeyboardShortcuts();
     initPwaPrompt();
     setupCopyLinks();
+    setupTooltip();
 });
 
-// ==================== 快捷键 ====================
+// ==================== 自定义 Tooltip ====================
+function setupTooltip() {
+    // 创建 tooltip 元素
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.style.cssText = `
+        position: fixed;
+        padding: 8px 12px;
+        background: rgba(30, 41, 59, 0.95);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 8px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 99999;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    `;
+    document.body.appendChild(tooltip);
+
+    // 监听悬停事件
+    document.addEventListener('mouseover', (e) => {
+        const card = e.target.closest('.site-card');
+        if (card && card.dataset.tooltip) {
+            tooltip.textContent = card.dataset.tooltip;
+            tooltip.style.opacity = '1';
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const card = e.target.closest('.site-card');
+        if (card) {
+            tooltip.style.opacity = '0';
+        }
+    });
+
+    // 更新 tooltip 位置
+    document.addEventListener('mousemove', (e) => {
+        if (tooltip.style.opacity === '1') {
+            const x = e.clientX;
+            const y = e.clientY - 40;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+        }
+    });
+}
 
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
