@@ -245,7 +245,8 @@ function createSiteCard(site) {
     card.href = site.url;
     card.target = '_blank';
     card.className = 'site-card glass-effect';
-    card.dataset.siteId = site.id; // 添加站点ID用于拖拽排序
+    card.dataset.siteId = site.id;
+    card.dataset.tooltip = site.name;
 
     card.innerHTML = `
         <div class="logo-wrapper">
@@ -254,7 +255,7 @@ function createSiteCard(site) {
                  data-src="${logo}" 
                  alt="${site.name}">
         </div>
-        <span class="site-name" data-tooltip="${site.name}">${site.name}</span>
+        <span class="site-name">${site.name}</span>
     `;
 
     return card;
