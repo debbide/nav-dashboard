@@ -241,12 +241,11 @@ const DEFAULT_ICON = '/default-icon.png';
 function createSiteCard(site) {
     const logo = site.logo || DEFAULT_ICON;
 
-    const card = document.createElement('a');
-    card.href = site.url;
-    card.target = '_blank';
+    const card = document.createElement('div');
     card.className = 'site-card glass-effect';
     card.dataset.siteId = site.id;
     card.dataset.tooltip = site.name;
+    card.dataset.url = site.url;
 
     card.innerHTML = `
         <div class="logo-wrapper">
@@ -257,6 +256,11 @@ function createSiteCard(site) {
         </div>
         <span class="site-name">${site.name}</span>
     `;
+
+    // 点击跳转
+    card.addEventListener('click', () => {
+        window.open(site.url, '_blank');
+    });
 
     return card;
 }
@@ -660,9 +664,9 @@ function showCopyToast() {
 function setupCopyLinks() {
     document.addEventListener('contextmenu', (e) => {
         const card = e.target.closest('.site-card');
-        if (card && card.href) {
+        if (card && card.dataset.url) {
             e.preventDefault();
-            copyToClipboard(card.href);
+            copyToClipboard(card.dataset.url);
         }
     });
 
@@ -670,10 +674,10 @@ function setupCopyLinks() {
     let longPressTimer = null;
     document.addEventListener('touchstart', (e) => {
         const card = e.target.closest('.site-card');
-        if (card && card.href) {
+        if (card && card.dataset.url) {
             longPressTimer = setTimeout(() => {
                 e.preventDefault();
-                copyToClipboard(card.href);
+                copyToClipboard(card.dataset.url);
             }, 600);
         }
     });
