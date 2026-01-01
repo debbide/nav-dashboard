@@ -4,16 +4,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="导航站">
   <title>导航站</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=9">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css?v=18">
 </head>
 
 <body>
   <!-- 暗色模式切换 -->
   <button id="themeToggle" class="theme-toggle" title="切换主题">🌙</button>
 
+  <!-- PWA 安装提示 -->
+  <div id="pwaPrompt" class="pwa-prompt" style="display: none;">
+    <span>📲 添加到主屏幕，获得 App 体验</span>
+    <button id="pwaInstall" class="pwa-btn">安装</button>
+    <button id="pwaClose" class="pwa-close">×</button>
+  </div>
+
+  <!-- 复制成功提示 -->
+  <div id="copyToast" class="copy-toast">✓ 链接已复制</div>
+
+  <!-- 密码验证弹窗 -->
+  <div id="passwordModal" class="password-modal" style="display: none;">
+    <div class="password-modal-content glass-effect">
+      <h3>🔐 解锁编辑模式</h3>
+      <p>输入管理密码以启用拖拽排序</p>
+      <input type="password" id="editPassword" placeholder="请输入密码" autocomplete="off">
+      <div class="password-modal-btns">
+        <button id="passwordCancelBtn" class="btn-secondary">取消</button>
+        <button id="passwordConfirmBtn" class="btn-primary">确认</button>
+      </div>
+      <div id="passwordError" class="password-error"></div>
+    </div>
+  </div>
+
   <div class="container">
+
+    <!-- 快速添加弹窗 -->
+    <div id="quickAddModal" class="password-modal" style="display: none;">
+      <div class="password-modal-content glass-effect quick-add-modal">
+        <h3>➕ 快速添加网站</h3>
+        <input type="text" id="quickAddName" placeholder="网站名称" autocomplete="off">
+        <input type="url" id="quickAddUrl" placeholder="https://..." autocomplete="off">
+        <div class="quick-add-logo-row">
+          <input type="text" id="quickAddLogo" placeholder="图标URL（可选）" autocomplete="off">
+          <button type="button" id="quickAddFetch1" class="btn-secondary btn-sm" title="Google源"><img
+              src="https://www.google.com/favicon.ico" alt="G" style="width:16px;height:16px"></button>
+          <button type="button" id="quickAddFetch2" class="btn-secondary btn-sm" title="toolb.cn源"><img
+              src="https://toolb.cn/favicon.ico" alt="T" style="width:16px;height:16px"></button>
+          <button type="button" id="quickAddDefault" class="btn-secondary btn-sm" title="默认图标">🌐</button>
+        </div>
+        <div class="quick-add-logo-preview" id="quickAddLogoPreview"></div>
+        <select id="quickAddCategory" class="quick-add-select">
+          <option value="">选择分类...</option>
+        </select>
+        <div class="password-modal-btns">
+          <button id="quickAddCancelBtn" class="btn-secondary">取消</button>
+          <button id="quickAddConfirmBtn" class="btn-primary">添加</button>
+        </div>
+        <div id="quickAddError" class="password-error"></div>
+      </div>
+    </div>
 
     <!-- 顶栏：搜索引擎 -->
     <header class="header-simple">
@@ -36,7 +91,28 @@
         </div>
         <button id="searchBtn" class="search-btn">🔍</button>
       </div>
-      <a href="/admin.html" class="admin-link" title="管理">⚙️</a>
+      <!-- 齿轮菜单 -->
+      <div class="gear-menu-wrapper">
+        <button id="gearMenuBtn" class="gear-btn" title="菜单">⚙️</button>
+        <div id="gearMenu" class="gear-dropdown" style="display: none;">
+          <button id="quickAddBtn" class="gear-menu-item">
+            <span class="gear-menu-icon">➕</span>
+            <span>快速添加</span>
+          </button>
+          <button id="editModeBtn" class="gear-menu-item">
+            <span class="gear-menu-icon">🔐</span>
+            <span>编辑排序</span>
+          </button>
+          <button id="displaySettingsBtn" class="gear-menu-item">
+            <span class="gear-menu-icon">🎨</span>
+            <span>显示设置</span>
+          </button>
+          <a href="/admin.html" class="gear-menu-item">
+            <span class="gear-menu-icon">⚙️</span>
+            <span>管理后台</span>
+          </a>
+        </div>
+      </div>
     </header>
 
     <!-- 主布局 -->
@@ -82,33 +158,7 @@
     </a>
   </footer>
 
-  <!-- IP Info Card -->
-  <div id="ipCard" class="ip-card glass-effect" style="display: none;">
-    <div class="ip-header">
-      <span class="ip-greeting" id="ipGreeting">👋 欢迎光临</span>
-      <button class="ip-close" onclick="closeIpCard()">×</button>
-    </div>
-    <div class="ip-stats">
-      <span id="visitCount">第 1 次访问</span>
-    </div>
-    <div class="ip-content-compact">
-      <div class="ip-info-row">
-        <span class="ip-icon bounce">📍</span>
-        <span id="ipLocation">加载中...</span>
-      </div>
-      <div class="ip-info-row">
-        <span class="ip-icon pulse">🌐</span>
-        <span id="ipAddress">...</span>
-      </div>
-    </div>
-    <div class="ip-weather" id="ipWeather">
-      <span class="weather-icon">🌤️</span>
-      <span class="weather-temp" id="weatherTemp">--°C</span>
-      <span class="weather-desc" id="weatherDesc">获取天气中...</span>
-    </div>
-  </div>
-
-  <script src="/js/main.js?v=2"></script>
+  <script type="module" src="/js/main.js?v=14"></script>
 </body>
 
 </html>

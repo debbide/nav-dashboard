@@ -186,6 +186,23 @@ async function handleAPI(request, env, pathname, corsHeaders) {
         if (method === 'PUT') return await updateBackgroundSetting(request, env, corsHeaders);
     }
 
+    // Theme API
+    if (pathname === '/api/settings/theme') {
+        if (method === 'GET') return await getThemeSetting(env, corsHeaders);
+        if (method === 'PUT') return await updateThemeSetting(request, env, corsHeaders);
+    }
+
+    // Layout API
+    if (pathname === '/api/settings/layout') {
+        if (method === 'GET') return await getLayoutSetting(env, corsHeaders);
+        if (method === 'PUT') return await updateLayoutSetting(request, env, corsHeaders);
+    }
+
+    // Frontend Settings API (combined)
+    if (pathname === '/api/settings/frontend' && method === 'GET') {
+        return await getFrontendSettings(env, corsHeaders);
+    }
+
     // Password API
     if (pathname === '/api/settings/password') {
         if (method === 'GET') return await getPasswordSetting(env, corsHeaders);
@@ -746,6 +763,198 @@ async function updateBackgroundSetting(request, env, headers) {
             .run();
 
         return jsonResponse({ message: '背景图更新成功', background_image }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// ==================== 主题和布局设置 ====================
+
+// 默认配置
+const DEFAULT_THEME = {
+    primaryColor: '#a78bfa',
+    accentColor: '#e879f9',
+    cardStyle: 'glass',
+    cardRadius: 12,
+    darkMode: false
+};
+
+const DEFAULT_LAYOUT = {
+    viewMode: 'grid',
+    columns: 6,
+    cardSize: 'medium',
+    showDescription: false,
+    showCategory: false
+};
+
+// 获取主题设置
+async function getThemeSetting(env, headers) {
+    try {
+        const result = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('theme')
+            .first();
+
+        let theme = DEFAULT_THEME;
+        if (result?.value) {
+            try {
+                theme = { ...DEFAULT_THEME, ...JSON.parse(result.value) };
+            } catch (e) {}
+        }
+
+        return jsonResponse({ success: true, data: theme }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 更新主题设置
+async function updateThemeSetting(request, env, headers) {
+    try {
+        const { primaryColor, accentColor, cardStyle, cardRadius, darkMode } = await request.json();
+
+        // 验证颜色格式
+        const colorRegex = /^#[0-9A-Fa-f]{6}$/;
+        if (primaryColor && !colorRegex.test(primaryColor)) {
+            return jsonResponse({ success: false, error: '主题色格式无效' }, 400, headers);
+        }
+
+        // 验证卡片样式
+        const validStyles = ['glass', 'solid', 'minimal'];
+        if (cardStyle && !validStyles.includes(cardStyle)) {
+            return jsonResponse({ success: false, error: '卡片样式无效' }, 400, headers);
+        }
+
+        // 获取现有设置
+        const existing = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('theme')
+            .first();
+
+        let currentTheme = DEFAULT_THEME;
+        if (existing?.value) {
+            try {
+                currentTheme = { ...DEFAULT_THEME, ...JSON.parse(existing.value) };
+            } catch (e) {}
+        }
+
+        // 合并新设置
+        const newTheme = {
+            ...currentTheme,
+            ...(primaryColor && { primaryColor }),
+            ...(accentColor && { accentColor }),
+            ...(cardStyle && { cardStyle }),
+            ...(cardRadius !== undefined && { cardRadius }),
+            ...(darkMode !== undefined && { darkMode })
+        };
+
+        await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+            .bind('theme', JSON.stringify(newTheme))
+            .run();
+
+        return jsonResponse({ success: true, message: '主题设置已保存', data: newTheme }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 获取布局设置
+async function getLayoutSetting(env, headers) {
+    try {
+        const result = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('layout')
+            .first();
+
+        let layout = DEFAULT_LAYOUT;
+        if (result?.value) {
+            try {
+                layout = { ...DEFAULT_LAYOUT, ...JSON.parse(result.value) };
+            } catch (e) {}
+        }
+
+        return jsonResponse({ success: true, data: layout }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 更新布局设置
+async function updateLayoutSetting(request, env, headers) {
+    try {
+        const { viewMode, columns, cardSize, showDescription, showCategory } = await request.json();
+
+        // 验证视图模式
+        const validModes = ['grid', 'list', 'compact'];
+        if (viewMode && !validModes.includes(viewMode)) {
+            return jsonResponse({ success: false, error: '视图模式无效' }, 400, headers);
+        }
+
+        // 验证列数
+        if (columns !== undefined && (typeof columns !== 'number' || columns < 4 || columns > 8)) {
+            return jsonResponse({ success: false, error: '列数无效（4-8）' }, 400, headers);
+        }
+
+        // 获取现有设置
+        const existing = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('layout')
+            .first();
+
+        let currentLayout = DEFAULT_LAYOUT;
+        if (existing?.value) {
+            try {
+                currentLayout = { ...DEFAULT_LAYOUT, ...JSON.parse(existing.value) };
+            } catch (e) {}
+        }
+
+        // 合并新设置
+        const newLayout = {
+            ...currentLayout,
+            ...(viewMode && { viewMode }),
+            ...(columns !== undefined && { columns }),
+            ...(cardSize && { cardSize }),
+            ...(showDescription !== undefined && { showDescription }),
+            ...(showCategory !== undefined && { showCategory })
+        };
+
+        await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+            .bind('layout', JSON.stringify(newLayout))
+            .run();
+
+        return jsonResponse({ success: true, message: '布局设置已保存', data: newLayout }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500, headers);
+    }
+}
+
+// 获取所有前端设置
+async function getFrontendSettings(env, headers) {
+    try {
+        const bgResult = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('background_image')
+            .first();
+        const themeResult = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('theme')
+            .first();
+        const layoutResult = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('layout')
+            .first();
+
+        let theme = DEFAULT_THEME;
+        let layout = DEFAULT_LAYOUT;
+
+        if (themeResult?.value) {
+            try { theme = { ...DEFAULT_THEME, ...JSON.parse(themeResult.value) }; } catch (e) {}
+        }
+        if (layoutResult?.value) {
+            try { layout = { ...DEFAULT_LAYOUT, ...JSON.parse(layoutResult.value) }; } catch (e) {}
+        }
+
+        return jsonResponse({
+            success: true,
+            data: {
+                background_image: bgResult?.value || 'https://images.unsplash.com/photo-1484821582734-6c6c9f99a672?q=80&w=2000&auto=format&fit=crop',
+                theme,
+                layout
+            }
+        }, 200, headers);
     } catch (error) {
         return jsonResponse({ error: error.message }, 500, headers);
     }
