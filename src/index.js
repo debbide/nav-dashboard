@@ -34,6 +34,23 @@ export default {
     },
 };
 
+// 文件列表缓存（内存缓存，Worker 生命周期内有效）
+let cachedFileList = null;
+let fileListCacheTime = 0;
+const FILE_LIST_CACHE_TTL = 60000; // 60秒缓存
+
+// 获取文件列表（带缓存）
+async function getFileList(env) {
+    const now = Date.now();
+    if (cachedFileList && (now - fileListCacheTime) < FILE_LIST_CACHE_TTL) {
+        return cachedFileList;
+    }
+    const list = await env.__STATIC_CONTENT.list();
+    cachedFileList = list.keys.map(k => k.name);
+    fileListCacheTime = now;
+    return cachedFileList;
+}
+
 // 提供静态文件
 async function serveStatic(pathname, env) {
     try {
@@ -44,9 +61,8 @@ async function serveStatic(pathname, env) {
         // 处理根路径和文件路径
         let requestedFile = pathname === '/' ? 'index.html' : pathname.substring(1);
 
-        // 列出所有文件以查找匹配的哈希文件
-        const list = await env.__STATIC_CONTENT.list();
-        const files = list.keys.map(k => k.name);
+        // 获取文件列表（使用缓存）
+        const files = await getFileList(env);
 
         // 查找匹配的文件（考虑内容哈希）
         let actualFile = null;
@@ -762,7 +778,7 @@ async function getBackgroundSetting(env, headers) {
 
         return jsonResponse({ background_image: backgroundUrl }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -772,7 +788,7 @@ async function updateBackgroundSetting(request, env, headers) {
         const { background_image } = await request.json();
 
         if (!background_image) {
-            return jsonResponse({ error: '背景图URL不能为空' }, 400, headers);
+            return jsonResponse({ success: false, error: '背景图URL不能为空' }, 400, headers);
         }
 
         await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
@@ -781,7 +797,7 @@ async function updateBackgroundSetting(request, env, headers) {
 
         return jsonResponse({ message: '背景图更新成功', background_image }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -820,7 +836,7 @@ async function getThemeSetting(env, headers) {
 
         return jsonResponse({ success: true, data: theme }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -869,7 +885,7 @@ async function updateThemeSetting(request, env, headers) {
 
         return jsonResponse({ success: true, message: '主题设置已保存', data: newTheme }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -889,7 +905,7 @@ async function getLayoutSetting(env, headers) {
 
         return jsonResponse({ success: true, data: layout }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -937,43 +953,44 @@ async function updateLayoutSetting(request, env, headers) {
 
         return jsonResponse({ success: true, message: '布局设置已保存', data: newLayout }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
-// 获取所有前端设置
+// 获取所有前端设置（单次查询优化）
 async function getFrontendSettings(env, headers) {
     try {
-        const bgResult = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
-            .bind('background_image')
-            .first();
-        const themeResult = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
-            .bind('theme')
-            .first();
-        const layoutResult = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
-            .bind('layout')
-            .first();
+        // 使用单次查询获取所有设置
+        const { results } = await env.DB.prepare(
+            "SELECT key, value FROM settings WHERE key IN ('background_image', 'theme', 'layout')"
+        ).all();
+
+        // 转换为 map
+        const settingsMap = {};
+        for (const row of results) {
+            settingsMap[row.key] = row.value;
+        }
 
         let theme = DEFAULT_THEME;
         let layout = DEFAULT_LAYOUT;
 
-        if (themeResult?.value) {
-            try { theme = { ...DEFAULT_THEME, ...JSON.parse(themeResult.value) }; } catch (e) {}
+        if (settingsMap.theme) {
+            try { theme = { ...DEFAULT_THEME, ...JSON.parse(settingsMap.theme) }; } catch (e) {}
         }
-        if (layoutResult?.value) {
-            try { layout = { ...DEFAULT_LAYOUT, ...JSON.parse(layoutResult.value) }; } catch (e) {}
+        if (settingsMap.layout) {
+            try { layout = { ...DEFAULT_LAYOUT, ...JSON.parse(settingsMap.layout) }; } catch (e) {}
         }
 
         return jsonResponse({
             success: true,
             data: {
-                background_image: bgResult?.value || 'https://images.unsplash.com/photo-1484821582734-6c6c9f99a672?q=80&w=2000&auto=format&fit=crop',
+                background_image: settingsMap.background_image || 'https://images.unsplash.com/photo-1484821582734-6c6c9f99a672?q=80&w=2000&auto=format&fit=crop',
                 theme,
                 layout
             }
         }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -987,7 +1004,7 @@ async function getPasswordSetting(env, headers) {
         const password = result ? result.value : 'admin123';
         return jsonResponse({ has_password: true }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -997,7 +1014,7 @@ async function updatePasswordSetting(request, env, headers) {
         const { old_password, new_password } = await request.json();
 
         if (!new_password || new_password.length < 4) {
-            return jsonResponse({ error: '新密码不能少于4位' }, 400, headers);
+            return jsonResponse({ success: false, error: '新密码不能少于4位' }, 400, headers);
         }
 
         // 获取当前密码
@@ -1014,7 +1031,7 @@ async function updatePasswordSetting(request, env, headers) {
             : (storedPassword === old_password || storedPassword === oldPasswordHash);
 
         if (!isValid) {
-            return jsonResponse({ error: '原密码错误' }, 401, headers);
+            return jsonResponse({ success: false, error: '原密码错误' }, 401, headers);
         }
 
         // 存储新密码的哈希
@@ -1025,7 +1042,7 @@ async function updatePasswordSetting(request, env, headers) {
 
         return jsonResponse({ message: '密码修改成功' }, 200, headers);
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 
@@ -1052,7 +1069,7 @@ async function verifyPassword(request, env, headers) {
             return jsonResponse({ success: false, error: '密码错误' }, 401, headers);
         }
     } catch (error) {
-        return jsonResponse({ error: error.message }, 500, headers);
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
     }
 }
 

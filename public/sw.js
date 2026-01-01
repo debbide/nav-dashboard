@@ -1,5 +1,5 @@
 // Service Worker for nav-dashboard
-const CACHE_NAME = 'nav-dashboard-v2';
+const CACHE_NAME = 'nav-dashboard-v3';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -8,7 +8,16 @@ const STATIC_ASSETS = [
     '/css/admin.css',
     '/js/main.js',
     '/js/admin.js',
-    '/favicon.svg'
+    '/favicon.svg',
+    '/js/modules/api.js',
+    '/js/modules/ui.js',
+    '/js/modules/search.js',
+    '/js/modules/lazyload.js',
+    '/js/modules/pwa.js',
+    '/js/modules/quickAdd.js',
+    '/js/modules/drag.js',
+    '/js/modules/settings.js',
+    '/manifest.json'
 ];
 
 // Install - cache static assets
