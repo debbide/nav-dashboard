@@ -57,16 +57,19 @@ async function serveStatic(pathname, env) {
             actualFile = files.find(f => f.match(new RegExp(`^${baseName}\\.[a-f0-9]+\\.html$`)));
         } else if (requestedFile.startsWith('css/') || requestedFile.startsWith('js/')) {
             // CSS/JS 文件：先尝试精确匹配，再尝试哈希匹配
-            // 例如 js/admin.js 或 js/admin.abc123.js
+            // 支持子目录如 js/modules/api.js
             actualFile = files.find(f => f === requestedFile);
             if (!actualFile) {
-                const parts = requestedFile.split('/');
-                const dir = parts[0];
-                const fileName = parts[1].replace(/\.(css|js)$/, '');
-                const ext = parts[1].split('.').pop();
+                // 尝试匹配带哈希的文件名
+                const lastSlashIndex = requestedFile.lastIndexOf('/');
+                const dir = requestedFile.substring(0, lastSlashIndex);
+                const fileNameWithExt = requestedFile.substring(lastSlashIndex + 1);
+                const ext = fileNameWithExt.split('.').pop();
+                const fileName = fileNameWithExt.replace(/\.(css|js)$/, '');
                 // 转义文件名中的特殊正则字符（如 - . 等）
                 const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
-                actualFile = files.find(f => f.match(new RegExp(`^${dir}/${escapedFileName}\\.[a-f0-9]+\\.${ext}$`)));
+                const escapedDir = dir.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
+                actualFile = files.find(f => f.match(new RegExp(`^${escapedDir}/${escapedFileName}\\.[a-f0-9]+\\.${ext}$`)));
             }
         } else if (requestedFile.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/i)) {
             // 图片文件：直接查找或带哈希
@@ -78,13 +81,27 @@ async function serveStatic(pathname, env) {
                 const escapedBaseName = baseName.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
                 actualFile = files.find(f => f.match(new RegExp(`^${escapedBaseName}\\.[a-f0-9]+\\.${ext}$`)));
             }
+        } else if (requestedFile.match(/\.(json|webmanifest)$/i)) {
+            // JSON/manifest 文件：先精确匹配，再尝试哈希匹配
+            actualFile = files.find(f => f === requestedFile);
+            if (!actualFile) {
+                const ext = requestedFile.split('.').pop();
+                const baseName = requestedFile.replace(/\.[^.]+$/, '');
+                const escapedBaseName = baseName.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
+                actualFile = files.find(f => f.match(new RegExp(`^${escapedBaseName}\\.[a-f0-9]+\\.${ext}$`)));
+            }
         } else {
             // 其他文件直接查找
             actualFile = files.find(f => f === requestedFile);
         }
 
-        // 如果找不到请求的文件，尝试返回 index.html（用于 SPA）
+        // 如果找不到请求的文件
         if (!actualFile) {
+            // JS/CSS/JSON 等资源文件不应回退到 index.html，直接返回 404
+            if (requestedFile.match(/\.(js|css|json|png|jpg|jpeg|gif|svg|ico|webp|webmanifest)$/i)) {
+                return new Response('Not Found: ' + requestedFile, { status: 404 });
+            }
+            // 其他请求尝试返回 index.html（用于 SPA）
             actualFile = files.find(f => f.match(/^index\.[a-f0-9]+\.html$/));
             if (!actualFile) {
                 return new Response('Not Found', { status: 404 });
