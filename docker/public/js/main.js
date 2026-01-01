@@ -9,6 +9,7 @@ import { setupSearch, setupKeyboardShortcuts } from './modules/search.js';
 import { setupInfiniteScroll } from './modules/lazyload.js';
 import { registerServiceWorker, initPwaPrompt, setupCopyLinks } from './modules/pwa.js';
 import { initEditMode, initQuickAdd } from './modules/quickAdd.js';
+import { initSettings, openSettingsPanel } from './modules/settings.js';
 
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,4 +36,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // 编辑模式和快速添加
     initEditMode();
     initQuickAdd();
+
+    // 显示设置
+    initSettings();
+
+    // 绑定显示设置按钮
+    const displaySettingsBtn = document.getElementById('displaySettingsBtn');
+    if (displaySettingsBtn) {
+        displaySettingsBtn.addEventListener('click', () => {
+            openSettingsPanel();
+            // 关闭齿轮菜单
+            const gearMenu = document.getElementById('gearMenu');
+            if (gearMenu) gearMenu.style.display = 'none';
+        });
+    }
 });
