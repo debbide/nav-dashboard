@@ -52,6 +52,19 @@ function initDatabase() {
         )
     `);
 
+    // ==================== 添加索引优化查询性能 ====================
+    // 站点表索引
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_category_id ON sites(category_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_sort_order ON sites(sort_order)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_category_sort ON sites(category_id, sort_order)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_created_at ON sites(created_at)`);
+
+    // 分类表索引
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON categories(sort_order)`);
+
+    // 站点名称搜索索引（用于 LIKE 查询优化）
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_name ON sites(name)`);
+
     // 插入默认数据（如果表为空）
     const categoryCount = db.prepare('SELECT COUNT(*) as count FROM categories').get();
     if (categoryCount.count === 0) {
@@ -82,10 +95,35 @@ function initDatabase() {
         );
     }
 
-    console.log('✅ 数据库初始化完成');
+    console.log('✅ 数据库初始化完成（含索引）');
+}
+
+/**
+ * 获取数据库健康状态
+ * @returns {{ ok: boolean, tables: number, sites: number, categories: number }}
+ */
+function getHealthStatus() {
+    try {
+        const tables = db.prepare(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'`).get();
+        const sites = db.prepare('SELECT COUNT(*) as count FROM sites').get();
+        const categories = db.prepare('SELECT COUNT(*) as count FROM categories').get();
+
+        return {
+            ok: true,
+            tables: tables.count,
+            sites: sites.count,
+            categories: categories.count
+        };
+    } catch (error) {
+        return {
+            ok: false,
+            error: error.message
+        };
+    }
 }
 
 // 初始化
 initDatabase();
 
 module.exports = db;
+module.exports.getHealthStatus = getHealthStatus;

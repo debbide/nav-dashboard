@@ -6,6 +6,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { isAllowedImageDomain } = require('../utils/validator');
+const { asyncHandler } = require('../middleware/errorHandler');
 
 // 上传目录
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
@@ -44,23 +46,70 @@ router.post('/', upload.single('image'), (req, res) => {
 
 // 获取图片
 router.get('/images/:filename', (req, res) => {
-    const filePath = path.join(uploadsDir, req.params.filename);
+    // 安全检查：防止路径遍历
+    const filename = path.basename(req.params.filename);
+    if (filename !== req.params.filename || filename.includes('..')) {
+        return res.status(400).send('Invalid filename');
+    }
+
+    const filePath = path.join(uploadsDir, filename);
     if (!fs.existsSync(filePath)) {
         return res.status(404).send('Image not found');
     }
     res.sendFile(filePath);
 });
 
-// 图片代理
-router.get('/proxy/image', async (req, res) => {
+// 图片代理（带域名白名单）
+router.get('/proxy/image', asyncHandler(async (req, res) => {
     const imageUrl = req.query.url;
+
     if (!imageUrl) {
-        return res.status(400).send('Missing url parameter');
+        return res.status(400).json({
+            success: false,
+            error: 'Missing url parameter'
+        });
     }
+
+    // URL 格式验证
+    let parsedUrl;
     try {
-        new URL(imageUrl);
+        parsedUrl = new URL(imageUrl);
     } catch {
-        return res.status(400).send('Invalid url parameter');
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid url parameter'
+        });
+    }
+
+    // 协议检查
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return res.status(400).json({
+            success: false,
+            error: 'Only http/https protocols are allowed'
+        });
+    }
+
+    // SSRF 防护：检查域名白名单
+    if (!isAllowedImageDomain(imageUrl)) {
+        return res.status(403).json({
+            success: false,
+            error: 'Domain not allowed',
+            message: '该域名不在允许列表中，如需添加请联系管理员'
+        });
+    }
+
+    // 防止请求内网地址
+    const hostname = parsedUrl.hostname.toLowerCase();
+    if (hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.') ||
+        hostname.endsWith('.local')) {
+        return res.status(403).json({
+            success: false,
+            error: 'Internal addresses are not allowed'
+        });
     }
 
     try {
@@ -69,26 +118,54 @@ router.get('/proxy/image', async (req, res) => {
 
         const response = await fetch(imageUrl, {
             signal: controller.signal,
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NavDashboard/1.0)', 'Accept': 'image/*' }
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; NavDashboard/1.0)',
+                'Accept': 'image/*'
+            }
         });
         clearTimeout(timeout);
 
         if (!response.ok) {
-            return res.status(502).send('Image fetch failed');
+            return res.status(502).json({
+                success: false,
+                error: 'Image fetch failed',
+                status: response.status
+            });
         }
 
         const contentType = response.headers.get('Content-Type') || '';
         if (!contentType.startsWith('image/')) {
-            return res.status(400).send('Not an image');
+            return res.status(400).json({
+                success: false,
+                error: 'Not an image',
+                contentType
+            });
+        }
+
+        // 限制响应大小（5MB）
+        const contentLength = parseInt(response.headers.get('Content-Length') || '0');
+        if (contentLength > 5 * 1024 * 1024) {
+            return res.status(413).json({
+                success: false,
+                error: 'Image too large (max 5MB)'
+            });
         }
 
         res.set('Content-Type', contentType);
         res.set('Cache-Control', 'public, max-age=604800');
+        res.set('X-Content-Type-Options', 'nosniff');
+
         const buffer = Buffer.from(await response.arrayBuffer());
         res.send(buffer);
     } catch (error) {
-        res.status(504).send('Image proxy timeout');
+        if (error.name === 'AbortError') {
+            return res.status(504).json({
+                success: false,
+                error: 'Image proxy timeout'
+            });
+        }
+        throw error;
     }
-});
+}));
 
 module.exports = router;
