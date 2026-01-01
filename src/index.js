@@ -18,21 +18,6 @@ export default {
         try {
             // API 路由
             if (pathname.startsWith('/api/')) {
-                // API 请求限流检查
-                const rateLimitResult = await checkRateLimit(request, env);
-                if (!rateLimitResult.allowed) {
-                    return new Response(JSON.stringify({
-                        success: false,
-                        message: '请求过于频繁，请稍后再试'
-                    }), {
-                        status: 429,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Retry-After': '60',
-                            ...corsHeaders
-                        }
-                    });
-                }
                 return await handleAPI(request, env, pathname, corsHeaders);
             }
 
@@ -852,44 +837,6 @@ async function hashPassword(password) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// API 请求限流检查（100次/分钟）
-async function checkRateLimit(request, env) {
-    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
-    const key = `ratelimit:${ip}`;
-    const limit = 100;  // 每分钟最大请求数
-    const window = 60;  // 时间窗口（秒）
-
-    try {
-        // 从 KV 获取当前计数
-        const data = await env.KV.get(key, 'json');
-        const now = Math.floor(Date.now() / 1000);
-
-        if (data && data.timestamp > now - window) {
-            // 在时间窗口内
-            if (data.count >= limit) {
-                return { allowed: false, remaining: 0 };
-            }
-            // 增加计数
-            await env.KV.put(key, JSON.stringify({
-                count: data.count + 1,
-                timestamp: data.timestamp
-            }), { expirationTtl: window });
-            return { allowed: true, remaining: limit - data.count - 1 };
-        } else {
-            // 新的时间窗口
-            await env.KV.put(key, JSON.stringify({
-                count: 1,
-                timestamp: now
-            }), { expirationTtl: window });
-            return { allowed: true, remaining: limit - 1 };
-        }
-    } catch (error) {
-        // 如果 KV 出错，允许请求通过
-        console.error('Rate limit check error:', error);
-        return { allowed: true, remaining: limit };
-    }
 }
 
 // ==================== 数据导出导入 ====================
