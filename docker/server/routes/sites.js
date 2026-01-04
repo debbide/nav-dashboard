@@ -7,6 +7,7 @@ const db = require('../db');
 const { cacheRemoteImage, tryDownloadImage, uploadsDir } = require('../utils/imageCache');
 const { validateSiteData } = require('../utils/validator');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { requireAuth } = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
 
@@ -53,8 +54,8 @@ router.get('/', (req, res) => {
     });
 });
 
-// 创建站点
-router.post('/', asyncHandler(async (req, res) => {
+// 创建站点（需要认证）
+router.post('/', requireAuth, asyncHandler(async (req, res) => {
     const { category_id, sort_order } = req.body;
 
     // 输入验证
@@ -81,8 +82,8 @@ router.post('/', asyncHandler(async (req, res) => {
     res.json({ success: true, message: '站点创建成功', data: { id: result.lastInsertRowid } });
 }));
 
-// 更新站点
-router.put('/:id', asyncHandler(async (req, res) => {
+// 更新站点（需要认证）
+router.put('/:id', requireAuth, asyncHandler(async (req, res) => {
     const { category_id, sort_order } = req.body;
     const siteId = parseInt(req.params.id);
 
@@ -117,8 +118,8 @@ router.put('/:id', asyncHandler(async (req, res) => {
     res.json({ success: true, message: '站点更新成功' });
 }));
 
-// 删除站点
-router.delete('/:id', (req, res) => {
+// 删除站点（需要认证）
+router.delete('/:id', requireAuth, (req, res) => {
     const siteId = parseInt(req.params.id);
     if (isNaN(siteId)) {
         return res.status(400).json({ success: false, message: '无效的站点ID' });
@@ -131,8 +132,8 @@ router.delete('/:id', (req, res) => {
     res.json({ success: true, message: '站点删除成功' });
 });
 
-// 站点排序
-router.post('/reorder', (req, res) => {
+// 站点排序（需要认证）
+router.post('/reorder', requireAuth, (req, res) => {
     const { order } = req.body;
 
     if (!order || !Array.isArray(order)) {
@@ -160,8 +161,8 @@ router.post('/reorder', (req, res) => {
     res.json({ success: true, message: '排序更新成功' });
 });
 
-// 恢复为网络图标
-router.post('/restore-remote-logos', asyncHandler(async (req, res) => {
+// 恢复为网络图标（需要认证）
+router.post('/restore-remote-logos', requireAuth, asyncHandler(async (req, res) => {
     const sites = db.prepare(`SELECT id, name, url FROM sites`).all();
     let updated = 0;
     let failed = 0;
@@ -188,8 +189,8 @@ router.post('/restore-remote-logos', asyncHandler(async (req, res) => {
     });
 }));
 
-// 批量缓存站点图标
-router.post('/cache-logos', asyncHandler(async (req, res) => {
+// 批量缓存站点图标（需要认证）
+router.post('/cache-logos', requireAuth, asyncHandler(async (req, res) => {
     const sites = db.prepare(`SELECT id, name, url, logo FROM sites WHERE logo IS NOT NULL AND logo != ''`).all();
 
     let cached = 0;

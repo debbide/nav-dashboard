@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { requireAuth } = require('../middleware/auth');
 
 // 获取分类列表
 router.get('/', (req, res) => {
@@ -14,8 +15,8 @@ router.get('/', (req, res) => {
     res.json({ success: true, data: results });
 });
 
-// 创建分类
-router.post('/', (req, res) => {
+// 创建分类（需要认证）
+router.post('/', requireAuth, (req, res) => {
     const { name, icon, color, sort_order } = req.body;
     if (!name) {
         return res.status(400).json({ success: false, message: '分类名称为必填项' });
@@ -25,8 +26,8 @@ router.post('/', (req, res) => {
     res.json({ success: true, message: '分类创建成功', data: { id: result.lastInsertRowid } });
 });
 
-// 更新分类
-router.put('/:id', (req, res) => {
+// 更新分类（需要认证）
+router.put('/:id', requireAuth, (req, res) => {
     const { name, icon, color, sort_order } = req.body;
     if (!name) {
         return res.status(400).json({ success: false, message: '分类名称为必填项' });
@@ -39,8 +40,8 @@ router.put('/:id', (req, res) => {
     res.json({ success: true, message: '分类更新成功' });
 });
 
-// 删除分类
-router.delete('/:id', (req, res) => {
+// 删除分类（需要认证）
+router.delete('/:id', requireAuth, (req, res) => {
     const count = db.prepare('SELECT COUNT(*) as count FROM sites WHERE category_id = ?').get(req.params.id);
     if (count.count > 0) {
         return res.status(400).json({ success: false, message: `此分类下还有 ${count.count} 个站点，无法删除` });
@@ -52,8 +53,8 @@ router.delete('/:id', (req, res) => {
     res.json({ success: true, message: '分类删除成功' });
 });
 
-// 分类排序
-router.post('/reorder', (req, res) => {
+// 分类排序（需要认证）
+router.post('/reorder', requireAuth, (req, res) => {
     const { order } = req.body;
     if (!order || !Array.isArray(order)) {
         return res.status(400).json({ success: false, message: '无效的排序数据' });

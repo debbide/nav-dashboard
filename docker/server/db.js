@@ -52,6 +52,27 @@ function initDatabase() {
         )
     `);
 
+    // 创建标签表
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            color TEXT DEFAULT '#6366f1',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // 创建站点-标签关联表
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS site_tags (
+            site_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            PRIMARY KEY (site_id, tag_id),
+            FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        )
+    `);
+
     // ==================== 添加索引优化查询性能 ====================
     // 站点表索引
     db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_category_id ON sites(category_id)`);
@@ -64,6 +85,11 @@ function initDatabase() {
 
     // 站点名称搜索索引（用于 LIKE 查询优化）
     db.exec(`CREATE INDEX IF NOT EXISTS idx_sites_name ON sites(name)`);
+
+    // 标签相关索引
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_site_tags_site_id ON site_tags(site_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_site_tags_tag_id ON site_tags(tag_id)`);
 
     // 插入默认数据（如果表为空）
     const categoryCount = db.prepare('SELECT COUNT(*) as count FROM categories').get();

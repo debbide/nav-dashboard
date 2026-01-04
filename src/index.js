@@ -7,7 +7,7 @@ export default {
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token',
         };
 
         // 处理 OPTIONS 请求
@@ -170,10 +170,115 @@ function getContentType(path) {
     return types[ext] || 'application/octet-stream';
 }
 
+// ==================== 认证工具函数 ====================
+
+const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24小时
+
+// 生成 token
+function generateToken() {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 从请求中提取 token
+function extractToken(request) {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return authHeader.slice(7);
+    }
+    const xAuthToken = request.headers.get('X-Auth-Token');
+    if (xAuthToken) {
+        return xAuthToken;
+    }
+    const cookies = request.headers.get('Cookie');
+    if (cookies) {
+        const match = cookies.match(/nav_token=([^;]+)/);
+        if (match) {
+            return match[1];
+        }
+    }
+    return null;
+}
+
+// 验证 token（使用 KV 存储）
+async function validateToken(token, env) {
+    if (!token) return false;
+    try {
+        const data = await env.KV.get(`token:${token}`);
+        if (!data) return false;
+        const tokenData = JSON.parse(data);
+        if (Date.now() > tokenData.expiry) {
+            await env.KV.delete(`token:${token}`);
+            return false;
+        }
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// 创建 token（存入 KV）
+async function createToken(env) {
+    const token = generateToken();
+    const tokenData = {
+        expiry: Date.now() + TOKEN_EXPIRY,
+        createdAt: Date.now()
+    };
+    await env.KV.put(`token:${token}`, JSON.stringify(tokenData), {
+        expirationTtl: 86400 // 24小时后自动删除
+    });
+    return token;
+}
+
+// 认证检查
+async function requireAuth(request, env) {
+    const token = extractToken(request);
+    const isValid = await validateToken(token, env);
+    if (!isValid) {
+        return { authorized: false, error: '未登录或登录已过期，请先登录' };
+    }
+    return { authorized: true };
+}
+
 // ==================== API 处理函数 ====================
 
 async function handleAPI(request, env, pathname, corsHeaders) {
     const method = request.method;
+
+    // 需要认证的写操作
+    const writeOperations = [
+        { path: '/api/sites', methods: ['POST'] },
+        { path: /^\/api\/sites\/\d+$/, methods: ['PUT', 'DELETE'] },
+        { path: '/api/sites/reorder', methods: ['POST'] },
+        { path: '/api/sites/restore-remote-logos', methods: ['POST'] },
+        { path: '/api/categories', methods: ['POST'] },
+        { path: /^\/api\/categories\/\d+$/, methods: ['PUT', 'DELETE'] },
+        { path: '/api/categories/reorder', methods: ['POST'] },
+        { path: '/api/settings/background', methods: ['PUT'] },
+        { path: '/api/upload', methods: ['POST'] },
+        { path: '/api/export', methods: ['GET'] },
+        { path: '/api/import', methods: ['POST'] },
+        { path: '/api/import/bookmarks', methods: ['POST'] },
+        { path: '/api/tags', methods: ['POST'] },
+        { path: /^\/api\/tags\/\d+$/, methods: ['PUT', 'DELETE'] },
+        { path: /^\/api\/tags\/site\/\d+$/, methods: ['PUT'] },
+    ];
+
+    // 检查是否需要认证
+    const needsAuth = writeOperations.some(op => {
+        const pathMatch = typeof op.path === 'string'
+            ? pathname === op.path
+            : op.path.test(pathname);
+        return pathMatch && op.methods.includes(method);
+    });
+
+    if (needsAuth) {
+        const auth = await requireAuth(request, env);
+        if (!auth.authorized) {
+            return jsonResponse({ success: false, error: auth.error }, 401, corsHeaders);
+        }
+    }
 
     if (pathname === '/api/sites') {
         if (method === 'GET') return await getSites(request, env, corsHeaders);
@@ -243,7 +348,15 @@ async function handleAPI(request, env, pathname, corsHeaders) {
     }
 
     if (pathname === '/api/auth/verify' && method === 'POST') {
-        return await verifyPassword(request, env, corsHeaders);
+        return await verifyPasswordAndLogin(request, env, corsHeaders);
+    }
+
+    if (pathname === '/api/auth/logout' && method === 'POST') {
+        return await logoutUser(request, env, corsHeaders);
+    }
+
+    if (pathname === '/api/auth/status' && method === 'GET') {
+        return await getAuthStatus(request, env, corsHeaders);
     }
 
     if (pathname === '/api/upload' && method === 'POST') {
@@ -290,6 +403,28 @@ async function handleAPI(request, env, pathname, corsHeaders) {
     // 书签导入 API
     if (pathname === '/api/import/bookmarks' && method === 'POST') {
         return await importBookmarks(request, env, corsHeaders);
+    }
+
+    // ==================== 标签 API ====================
+    if (pathname === '/api/tags') {
+        if (method === 'GET') return await getTags(env, corsHeaders);
+        if (method === 'POST') return await createTag(request, env, corsHeaders);
+    }
+
+    if (pathname.match(/^\/api\/tags\/\d+$/)) {
+        const id = pathname.split('/').pop();
+        if (method === 'PUT') return await updateTag(id, request, env, corsHeaders);
+        if (method === 'DELETE') return await deleteTag(id, env, corsHeaders);
+    }
+
+    if (pathname.match(/^\/api\/tags\/site\/\d+$/)) {
+        const siteId = pathname.split('/').pop();
+        if (method === 'GET') return await getSiteTags(siteId, env, corsHeaders);
+        if (method === 'PUT') return await setSiteTags(siteId, request, env, corsHeaders);
+    }
+
+    if (pathname === '/api/tags/filter' && method === 'GET') {
+        return await filterSitesByTags(request, env, corsHeaders);
     }
 
     return jsonResponse({ success: false, message: 'API Not Found' }, 404, corsHeaders);
@@ -1046,7 +1181,67 @@ async function updatePasswordSetting(request, env, headers) {
     }
 }
 
-// 验证密码（支持明文和哈希）
+// 验证密码并登录（返回 token）
+async function verifyPasswordAndLogin(request, env, headers) {
+    try {
+        const { password } = await request.json();
+
+        const result = await env.DB.prepare('SELECT value FROM settings WHERE key = ?')
+            .bind('admin_password')
+            .first();
+
+        const storedPassword = result ? result.value : null;
+        const passwordHash = await hashPassword(password);
+
+        // 支持明文密码（向后兼容）和哈希密码
+        const isValid = storedPassword === null
+            ? password === 'admin123'  // 默认密码
+            : (storedPassword === password || storedPassword === passwordHash);
+
+        if (isValid) {
+            // 生成 token
+            const token = await createToken(env);
+
+            return new Response(JSON.stringify({ success: true, token }), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Set-Cookie': `nav_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`,
+                    ...headers
+                }
+            });
+        } else {
+            return jsonResponse({ success: false, error: '密码错误' }, 401, headers);
+        }
+    } catch (error) {
+        return jsonResponse({ success: false, error: error.message }, 500, headers);
+    }
+}
+
+// 登出
+async function logoutUser(request, env, headers) {
+    const token = extractToken(request);
+    if (token) {
+        await env.KV.delete(`token:${token}`);
+    }
+    return new Response(JSON.stringify({ success: true, message: '已登出' }), {
+        status: 200,
+        headers: {
+            'Content-Type': 'application/json',
+            'Set-Cookie': 'nav_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0',
+            ...headers
+        }
+    });
+}
+
+// 检查认证状态
+async function getAuthStatus(request, env, headers) {
+    const token = extractToken(request);
+    const isValid = await validateToken(token, env);
+    return jsonResponse({ success: true, authenticated: isValid }, 200, headers);
+}
+
+// 验证密码（保留旧函数名兼容）
 async function verifyPassword(request, env, headers) {
     try {
         const { password } = await request.json();
@@ -1347,4 +1542,186 @@ function parseBookmarkHtml(html) {
     }
 
     return bookmarks;
+}
+
+// ==================== 标签操作 ====================
+
+// 获取所有标签
+async function getTags(env, headers) {
+    const { results } = await env.DB.prepare(`
+        SELECT t.*,
+        (SELECT COUNT(*) FROM site_tags WHERE tag_id = t.id) as sites_count
+        FROM tags t
+        ORDER BY t.name ASC
+    `).all();
+
+    return jsonResponse({ success: true, data: results }, 200, headers);
+}
+
+// 创建标签
+async function createTag(request, env, headers) {
+    try {
+        const { name, color } = await request.json();
+
+        if (!name || !name.trim()) {
+            return jsonResponse({ success: false, message: '标签名称不能为空' }, 400, headers);
+        }
+
+        const result = await env.DB.prepare('INSERT INTO tags (name, color) VALUES (?, ?)')
+            .bind(name.trim(), color || '#6366f1')
+            .run();
+
+        return jsonResponse({
+            success: true,
+            message: '标签创建成功',
+            data: { id: result.meta.last_row_id }
+        }, 200, headers);
+    } catch (error) {
+        if (error.message.includes('UNIQUE constraint')) {
+            return jsonResponse({ success: false, message: '标签名称已存在' }, 400, headers);
+        }
+        return jsonResponse({ success: false, message: error.message }, 500, headers);
+    }
+}
+
+// 更新标签
+async function updateTag(id, request, env, headers) {
+    try {
+        const { name, color } = await request.json();
+
+        if (!name || !name.trim()) {
+            return jsonResponse({ success: false, message: '标签名称不能为空' }, 400, headers);
+        }
+
+        const result = await env.DB.prepare('UPDATE tags SET name = ?, color = ? WHERE id = ?')
+            .bind(name.trim(), color || '#6366f1', id)
+            .run();
+
+        if (result.meta.changes === 0) {
+            return jsonResponse({ success: false, message: '标签不存在' }, 404, headers);
+        }
+
+        return jsonResponse({ success: true, message: '标签更新成功' }, 200, headers);
+    } catch (error) {
+        if (error.message.includes('UNIQUE constraint')) {
+            return jsonResponse({ success: false, message: '标签名称已存在' }, 400, headers);
+        }
+        return jsonResponse({ success: false, message: error.message }, 500, headers);
+    }
+}
+
+// 删除标签
+async function deleteTag(id, env, headers) {
+    const result = await env.DB.prepare('DELETE FROM tags WHERE id = ?').bind(id).run();
+
+    if (result.meta.changes === 0) {
+        return jsonResponse({ success: false, message: '标签不存在' }, 404, headers);
+    }
+
+    return jsonResponse({ success: true, message: '标签删除成功' }, 200, headers);
+}
+
+// 获取站点的标签
+async function getSiteTags(siteId, env, headers) {
+    const { results } = await env.DB.prepare(`
+        SELECT t.* FROM tags t
+        INNER JOIN site_tags st ON t.id = st.tag_id
+        WHERE st.site_id = ?
+        ORDER BY t.name ASC
+    `).bind(siteId).all();
+
+    return jsonResponse({ success: true, data: results }, 200, headers);
+}
+
+// 设置站点的标签
+async function setSiteTags(siteId, request, env, headers) {
+    try {
+        const { tag_ids } = await request.json();
+
+        if (!Array.isArray(tag_ids)) {
+            return jsonResponse({ success: false, message: 'tag_ids 必须是数组' }, 400, headers);
+        }
+
+        // 检查站点是否存在
+        const site = await env.DB.prepare('SELECT id FROM sites WHERE id = ?').bind(siteId).first();
+        if (!site) {
+            return jsonResponse({ success: false, message: '站点不存在' }, 404, headers);
+        }
+
+        // 删除现有标签关联
+        await env.DB.prepare('DELETE FROM site_tags WHERE site_id = ?').bind(siteId).run();
+
+        // 添加新的标签关联
+        for (const tagId of tag_ids) {
+            await env.DB.prepare('INSERT OR IGNORE INTO site_tags (site_id, tag_id) VALUES (?, ?)')
+                .bind(siteId, tagId)
+                .run();
+        }
+
+        return jsonResponse({ success: true, message: '站点标签更新成功' }, 200, headers);
+    } catch (error) {
+        return jsonResponse({ success: false, message: error.message }, 500, headers);
+    }
+}
+
+// 按标签筛选站点
+async function filterSitesByTags(request, env, headers) {
+    const url = new URL(request.url);
+    const tagIdsParam = url.searchParams.get('tag_ids');
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const pageSize = parseInt(url.searchParams.get('pageSize')) || 24;
+    const offset = (page - 1) * pageSize;
+
+    if (!tagIdsParam) {
+        return jsonResponse({ success: false, message: '请指定标签ID' }, 400, headers);
+    }
+
+    const tagIdArray = tagIdsParam.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+
+    if (tagIdArray.length === 0) {
+        return jsonResponse({ success: false, message: '无效的标签ID' }, 400, headers);
+    }
+
+    const placeholders = tagIdArray.map(() => '?').join(',');
+
+    // 查询同时拥有所有指定标签的站点数量
+    const countQuery = `
+        SELECT COUNT(*) as count FROM (
+            SELECT s.id
+            FROM sites s
+            INNER JOIN site_tags st ON s.id = st.site_id
+            WHERE st.tag_id IN (${placeholders})
+            GROUP BY s.id
+            HAVING COUNT(DISTINCT st.tag_id) = ?
+        )
+    `;
+    const countResult = await env.DB.prepare(countQuery).bind(...tagIdArray, tagIdArray.length).first();
+    const total = countResult?.count || 0;
+
+    // 查询站点数据
+    const dataQuery = `
+        SELECT DISTINCT s.*, c.name as category_name, c.color as category_color
+        FROM sites s
+        LEFT JOIN categories c ON s.category_id = c.id
+        INNER JOIN site_tags st ON s.id = st.site_id
+        WHERE st.tag_id IN (${placeholders})
+        GROUP BY s.id
+        HAVING COUNT(DISTINCT st.tag_id) = ?
+        ORDER BY s.sort_order ASC, s.created_at DESC
+        LIMIT ? OFFSET ?
+    `;
+    const { results } = await env.DB.prepare(dataQuery)
+        .bind(...tagIdArray, tagIdArray.length, pageSize, offset)
+        .all();
+
+    return jsonResponse({
+        success: true,
+        data: results,
+        pagination: {
+            page,
+            pageSize,
+            total,
+            hasMore: offset + results.length < total
+        }
+    }, 200, headers);
 }

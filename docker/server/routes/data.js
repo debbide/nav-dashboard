@@ -4,9 +4,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { requireAuth } = require('../middleware/auth');
 
-// 数据导出
-router.get('/export', (req, res) => {
+// 数据导出（需要认证）
+router.get('/export', requireAuth, (req, res) => {
     try {
         const categories = db.prepare(`
             SELECT id, name, icon, color, sort_order FROM categories ORDER BY sort_order ASC
@@ -36,8 +37,8 @@ router.get('/export', (req, res) => {
     }
 });
 
-// 数据导入
-router.post('/import', (req, res) => {
+// 数据导入（需要认证）
+router.post('/import', requireAuth, (req, res) => {
     try {
         const data = req.body;
 
@@ -86,8 +87,8 @@ router.post('/import', (req, res) => {
     }
 });
 
-// 书签导入
-router.post('/import/bookmarks', express.text({ type: 'text/html', limit: '5mb' }), (req, res) => {
+// 书签导入（需要认证）
+router.post('/import/bookmarks', requireAuth, express.text({ type: 'text/html', limit: '5mb' }), (req, res) => {
     try {
         const html = req.body;
 

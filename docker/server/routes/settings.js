@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { hashPassword } = require('../utils/hash');
+const { requireAuth } = require('../middleware/auth');
 
 // ==================== 背景图设置 ====================
 
@@ -15,8 +16,8 @@ router.get('/background', (req, res) => {
     res.json({ background_image: url });
 });
 
-// 更新背景图
-router.put('/background', (req, res) => {
+// 更新背景图（需要认证）
+router.put('/background', requireAuth, (req, res) => {
     const { background_image } = req.body;
     if (!background_image) {
         return res.status(400).json({ error: '背景图URL不能为空' });

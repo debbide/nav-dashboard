@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const { isAllowedImageDomain } = require('../utils/validator');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { requireAuth } = require('../middleware/auth');
 
 // 上传目录
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
@@ -36,8 +37,8 @@ const upload = multer({
     }
 });
 
-// 上传图片
-router.post('/', upload.single('image'), (req, res) => {
+// 上传图片（需要认证）
+router.post('/', requireAuth, upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ success: false, message: '没有上传文件或文件类型不支持' });
     }

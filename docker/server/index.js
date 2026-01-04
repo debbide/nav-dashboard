@@ -16,6 +16,7 @@ const authRouter = require('./routes/auth');
 const uploadRouter = require('./routes/upload');
 const dataRouter = require('./routes/data');
 const backupRouter = require('./routes/backup');
+const tagsRouter = require('./routes/tags');
 
 // 导入中间件
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
@@ -116,6 +117,7 @@ app.use('/api/v1/upload', uploadRouter);
 app.use('/api/v1', uploadRouter);
 app.use('/api/v1', dataRouter);
 app.use('/api/v1/backup', backupRouter);
+app.use('/api/v1/tags', tagsRouter);
 
 // 兼容旧版 API（无版本号）
 app.use('/api/sites', sitesRouter);
@@ -126,6 +128,7 @@ app.use('/api/upload', uploadRouter);
 app.use('/api', uploadRouter);
 app.use('/api', dataRouter);
 app.use('/api/backup', backupRouter);
+app.use('/api/tags', tagsRouter);
 
 // IP 信息 API
 app.get('/api/ip', (req, res) => {
