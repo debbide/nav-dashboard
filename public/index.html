@@ -90,6 +90,19 @@
           <div id="searchSuggestions" class="search-suggestions"></div>
         </div>
         <button id="searchBtn" class="search-btn">🔍</button>
+        <!-- 标签筛选按钮 -->
+        <div class="tag-filter-wrapper">
+          <button id="tagFilterBtn" class="tag-filter-btn-header" title="标签筛选">🏷️</button>
+          <div id="tagFilterDropdown" class="tag-filter-dropdown" style="display: none;">
+            <div class="tag-filter-dropdown-header">标签筛选</div>
+            <div id="tagFilterList" class="tag-filter-dropdown-list">
+              <!-- 动态加载标签 -->
+            </div>
+            <div class="tag-filter-dropdown-footer">
+              <button id="clearTagFilterBtn" class="tag-filter-clear-btn">清除筛选</button>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- 齿轮菜单 -->
       <div class="gear-menu-wrapper">

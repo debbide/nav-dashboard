@@ -236,6 +236,7 @@ export async function loadTags() {
         if (data.success) {
             allTags = data.data;
             renderTagsFilter();
+            setupTagFilterDropdown();
         }
     } catch (error) {
         console.error('加载标签失败:', error);
@@ -243,45 +244,84 @@ export async function loadTags() {
 }
 
 /**
- * 渲染标签筛选器
+ * 渲染标签筛选器（下拉面板方式）
  */
 export function renderTagsFilter() {
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar || allTags.length === 0) return;
+    const tagFilterList = document.getElementById('tagFilterList');
+    const tagFilterBtn = document.getElementById('tagFilterBtn');
 
-    // 检查是否已存在标签筛选器
-    let tagsContainer = document.getElementById('tagsFilter');
-    if (!tagsContainer) {
-        tagsContainer = document.createElement('div');
-        tagsContainer.id = 'tagsFilter';
-        tagsContainer.className = 'tags-filter';
-        sidebar.appendChild(tagsContainer);
+    if (!tagFilterList) return;
+
+    // 如果没有标签，隐藏筛选按钮
+    if (allTags.length === 0) {
+        const wrapper = document.querySelector('.tag-filter-wrapper');
+        if (wrapper) wrapper.style.display = 'none';
+        return;
     }
 
-    tagsContainer.innerHTML = `
-        <div class="tags-filter-header">🏷️ 标签筛选</div>
-        <div class="tags-filter-list">
-            ${allTags.map(tag => `
-                <button class="tag-filter-btn${currentTagFilter.includes(tag.id) ? ' active' : ''}"
-                        data-tag-id="${tag.id}"
-                        style="--tag-color: ${tag.color}">
-                    ${escapeHtml(tag.name)}
-                </button>
-            `).join('')}
-        </div>
-        ${currentTagFilter.length > 0 ? `
-            <button class="tag-filter-clear" onclick="window.clearTagFilter()">
-                清除筛选
-            </button>
-        ` : ''}
-    `;
+    // 显示筛选按钮
+    const wrapper = document.querySelector('.tag-filter-wrapper');
+    if (wrapper) wrapper.style.display = 'block';
 
-    // 绑定标签点击事件
-    tagsContainer.querySelectorAll('.tag-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tagId = parseInt(btn.dataset.tagId);
+    // 更新按钮状态（有筛选时高亮）
+    if (tagFilterBtn) {
+        if (currentTagFilter.length > 0) {
+            tagFilterBtn.classList.add('active');
+            tagFilterBtn.textContent = `🏷️ ${currentTagFilter.length}`;
+        } else {
+            tagFilterBtn.classList.remove('active');
+            tagFilterBtn.textContent = '🏷️';
+        }
+    }
+
+    // 渲染标签列表
+    tagFilterList.innerHTML = allTags.map(tag => `
+        <label class="tag-filter-item${currentTagFilter.includes(tag.id) ? ' active' : ''}">
+            <input type="checkbox" data-tag-id="${tag.id}" ${currentTagFilter.includes(tag.id) ? 'checked' : ''}>
+            <span class="tag-filter-color" style="background-color: ${tag.color}"></span>
+            <span class="tag-filter-name">${escapeHtml(tag.name)}</span>
+        </label>
+    `).join('');
+
+    // 绑定复选框事件
+    tagFilterList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const tagId = parseInt(checkbox.dataset.tagId);
             toggleTagFilter(tagId);
         });
+    });
+}
+
+/**
+ * 设置标签筛选下拉面板
+ */
+export function setupTagFilterDropdown() {
+    const tagFilterBtn = document.getElementById('tagFilterBtn');
+    const tagFilterDropdown = document.getElementById('tagFilterDropdown');
+    const clearTagFilterBtn = document.getElementById('clearTagFilterBtn');
+
+    if (!tagFilterBtn || !tagFilterDropdown) return;
+
+    // 点击按钮切换下拉面板
+    tagFilterBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = tagFilterDropdown.style.display !== 'none';
+        tagFilterDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // 点击清除按钮
+    if (clearTagFilterBtn) {
+        clearTagFilterBtn.addEventListener('click', () => {
+            clearTagFilter();
+            tagFilterDropdown.style.display = 'none';
+        });
+    }
+
+    // 点击外部关闭
+    document.addEventListener('click', (e) => {
+        if (!tagFilterDropdown.contains(e.target) && e.target !== tagFilterBtn) {
+            tagFilterDropdown.style.display = 'none';
+        }
     });
 }
 
