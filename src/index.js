@@ -1181,6 +1181,13 @@ async function updatePasswordSetting(request, env, headers) {
     }
 }
 
+// 验证 scrypt 密码（兼容 Docker 版格式）
+async function verifyScryptPassword(password, stored) {
+    // Cloudflare Workers 不支持 scrypt 算法
+    // 返回特殊错误提示用户
+    return { supported: false };
+}
+
 // 验证密码并登录（返回 token）
 async function verifyPasswordAndLogin(request, env, headers) {
     try {
@@ -1191,12 +1198,26 @@ async function verifyPasswordAndLogin(request, env, headers) {
             .first();
 
         const storedPassword = result ? result.value : null;
-        const passwordHash = await hashPassword(password);
 
-        // 支持明文密码（向后兼容）和哈希密码
-        const isValid = storedPassword === null
-            ? password === 'admin123'  // 默认密码
-            : (storedPassword === password || storedPassword === passwordHash);
+        let isValid = false;
+
+        if (storedPassword === null) {
+            // 未设置密码，使用默认密码
+            isValid = password === 'admin123';
+        } else if (storedPassword.startsWith('$scrypt$')) {
+            // scrypt 格式不被 CF 支持，提示用户
+            return jsonResponse({
+                success: false,
+                error: '密码格式不兼容。请在数据库中清除 admin_password 设置，或使用 Docker 版登录后重新设置密码为 SHA-256 格式。'
+            }, 400, headers);
+        } else if (storedPassword.length === 64) {
+            // SHA-256 格式
+            const passwordHash = await hashPassword(password);
+            isValid = storedPassword === passwordHash;
+        } else {
+            // 明文密码
+            isValid = storedPassword === password;
+        }
 
         if (isValid) {
             // 生成 token
