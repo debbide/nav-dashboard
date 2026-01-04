@@ -2,7 +2,9 @@
  * 设置模块 - 主题和布局配置
  */
 
-import { API_BASE } from './api.js';
+// 本地存储 key
+const STORAGE_KEY_THEME = 'nav_theme';
+const STORAGE_KEY_LAYOUT = 'nav_layout';
 
 // 默认配置
 const DEFAULT_THEME = {
@@ -26,39 +28,35 @@ let currentTheme = { ...DEFAULT_THEME };
 let currentLayout = { ...DEFAULT_LAYOUT };
 
 /**
- * 获取前端设置
+ * 获取前端设置（从 localStorage 读取）
  */
 export async function fetchFrontendSettings() {
     try {
-        const response = await fetch(`${API_BASE}/api/settings/frontend`);
-        const data = await response.json();
-        if (data.success) {
-            currentTheme = { ...DEFAULT_THEME, ...data.data.theme };
-            currentLayout = { ...DEFAULT_LAYOUT, ...data.data.layout };
-            return data.data;
+        const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+        const savedLayout = localStorage.getItem(STORAGE_KEY_LAYOUT);
+
+        if (savedTheme) {
+            currentTheme = { ...DEFAULT_THEME, ...JSON.parse(savedTheme) };
+        }
+        if (savedLayout) {
+            currentLayout = { ...DEFAULT_LAYOUT, ...JSON.parse(savedLayout) };
         }
     } catch (error) {
-        console.error('获取设置失败:', error);
+        console.error('读取本地设置失败:', error);
     }
     return { theme: currentTheme, layout: currentLayout };
 }
 
 /**
- * 保存主题设置
+ * 保存主题设置（到 localStorage）
  */
 export async function saveTheme(theme) {
     try {
-        const response = await fetch(`${API_BASE}/api/settings/theme`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(theme)
-        });
-        const data = await response.json();
-        if (data.success) {
-            currentTheme = data.data;
-            applyTheme(currentTheme);
-        }
-        return data;
+        const newTheme = { ...currentTheme, ...theme };
+        localStorage.setItem(STORAGE_KEY_THEME, JSON.stringify(newTheme));
+        currentTheme = newTheme;
+        applyTheme(currentTheme);
+        return { success: true, data: currentTheme };
     } catch (error) {
         console.error('保存主题失败:', error);
         return { success: false, error: error.message };
@@ -66,21 +64,15 @@ export async function saveTheme(theme) {
 }
 
 /**
- * 保存布局设置
+ * 保存布局设置（到 localStorage）
  */
 export async function saveLayout(layout) {
     try {
-        const response = await fetch(`${API_BASE}/api/settings/layout`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(layout)
-        });
-        const data = await response.json();
-        if (data.success) {
-            currentLayout = data.data;
-            applyLayout(currentLayout);
-        }
-        return data;
+        const newLayout = { ...currentLayout, ...layout };
+        localStorage.setItem(STORAGE_KEY_LAYOUT, JSON.stringify(newLayout));
+        currentLayout = newLayout;
+        applyLayout(currentLayout);
+        return { success: true, data: currentLayout };
     } catch (error) {
         console.error('保存布局失败:', error);
         return { success: false, error: error.message };
