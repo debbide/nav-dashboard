@@ -561,32 +561,40 @@ async function getSites(request, env, corsHeaders) {
 
     // 获取所有站点的标签（批量查询优化）
     if (results.length > 0) {
-        const siteIds = results.map(s => s.id);
-        const placeholders = siteIds.map(() => '?').join(',');
-        const tagsQuery = `
-            SELECT st.site_id, t.id, t.name, t.color
-            FROM site_tags st
-            INNER JOIN tags t ON st.tag_id = t.id
-            WHERE st.site_id IN (${placeholders})
-        `;
-        const { results: tagResults } = await env.DB.prepare(tagsQuery).bind(...siteIds).all();
+        try {
+            const siteIds = results.map(s => s.id);
+            const placeholders = siteIds.map(() => '?').join(',');
+            const tagsQuery = `
+                SELECT st.site_id, t.id, t.name, t.color
+                FROM site_tags st
+                INNER JOIN tags t ON st.tag_id = t.id
+                WHERE st.site_id IN (${placeholders})
+            `;
+            const { results: tagResults } = await env.DB.prepare(tagsQuery).bind(...siteIds).all();
 
-        // 将标签按站点分组
-        const tagsBySite = {};
-        for (const tag of tagResults) {
-            if (!tagsBySite[tag.site_id]) {
-                tagsBySite[tag.site_id] = [];
+            // 将标签按站点分组
+            const tagsBySite = {};
+            for (const tag of tagResults) {
+                if (!tagsBySite[tag.site_id]) {
+                    tagsBySite[tag.site_id] = [];
+                }
+                tagsBySite[tag.site_id].push({
+                    id: tag.id,
+                    name: tag.name,
+                    color: tag.color
+                });
             }
-            tagsBySite[tag.site_id].push({
-                id: tag.id,
-                name: tag.name,
-                color: tag.color
-            });
-        }
 
-        // 将标签添加到站点数据中
-        for (const site of results) {
-            site.tags = tagsBySite[site.id] || [];
+            // 将标签添加到站点数据中
+            for (const site of results) {
+                site.tags = tagsBySite[site.id] || [];
+            }
+        } catch (e) {
+            // 标签表可能不存在，忽略错误，站点数据仍然返回
+            console.log('标签查询失败（表可能不存在）:', e.message);
+            for (const site of results) {
+                site.tags = [];
+            }
         }
     }
 
@@ -1768,30 +1776,37 @@ async function filterSitesByTags(request, env, headers) {
 
     // 获取所有站点的标签
     if (results.length > 0) {
-        const siteIds = results.map(s => s.id);
-        const sitePlaceholders = siteIds.map(() => '?').join(',');
-        const tagsQuery = `
-            SELECT st.site_id, t.id, t.name, t.color
-            FROM site_tags st
-            INNER JOIN tags t ON st.tag_id = t.id
-            WHERE st.site_id IN (${sitePlaceholders})
-        `;
-        const { results: tagResults } = await env.DB.prepare(tagsQuery).bind(...siteIds).all();
+        try {
+            const siteIds = results.map(s => s.id);
+            const sitePlaceholders = siteIds.map(() => '?').join(',');
+            const tagsQuery = `
+                SELECT st.site_id, t.id, t.name, t.color
+                FROM site_tags st
+                INNER JOIN tags t ON st.tag_id = t.id
+                WHERE st.site_id IN (${sitePlaceholders})
+            `;
+            const { results: tagResults } = await env.DB.prepare(tagsQuery).bind(...siteIds).all();
 
-        const tagsBySite = {};
-        for (const tag of tagResults) {
-            if (!tagsBySite[tag.site_id]) {
-                tagsBySite[tag.site_id] = [];
+            const tagsBySite = {};
+            for (const tag of tagResults) {
+                if (!tagsBySite[tag.site_id]) {
+                    tagsBySite[tag.site_id] = [];
+                }
+                tagsBySite[tag.site_id].push({
+                    id: tag.id,
+                    name: tag.name,
+                    color: tag.color
+                });
             }
-            tagsBySite[tag.site_id].push({
-                id: tag.id,
-                name: tag.name,
-                color: tag.color
-            });
-        }
 
-        for (const site of results) {
-            site.tags = tagsBySite[site.id] || [];
+            for (const site of results) {
+                site.tags = tagsBySite[site.id] || [];
+            }
+        } catch (e) {
+            console.log('标签查询失败:', e.message);
+            for (const site of results) {
+                site.tags = [];
+            }
         }
     }
 
