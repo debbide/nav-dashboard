@@ -145,6 +145,50 @@
             color: #ff5252;
             display: block;
         }
+
+        /* 标签选择器样式 */
+        .tags-select-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            min-height: 40px;
+        }
+
+        .tag-checkbox {
+            display: none;
+        }
+
+        .tag-checkbox + label {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            opacity: 0.6;
+        }
+
+        .tag-checkbox:checked + label {
+            opacity: 1;
+            border-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .tag-checkbox + label:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .empty-tags-hint {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            padding: 0.5rem;
+        }
     </style>
 </head>
 
@@ -179,6 +223,10 @@
                     <button class="nav-item" data-tab="categories">
                         <span>📁</span>
                         <span>分类管理</span>
+                    </button>
+                    <button class="nav-item" data-tab="tags">
+                        <span>🏷️</span>
+                        <span>标签管理</span>
                     </button>
                     <button class="nav-item" data-tab="background">
                         <span>🖼️</span>
@@ -304,6 +352,38 @@
                     </div>
                 </div>
 
+                <!-- 标签管理面板 -->
+                <div id="tagsPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>🏷️ 标签管理</h2>
+                        <button class="btn-primary" onclick="openTagModal()">
+                            <span>➕</span>
+                            <span>添加标签</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>颜色</th>
+                                    <th>名称</th>
+                                    <th>站点数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tagsTableBody">
+                                <tr>
+                                    <td colspan="4" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- 背景设置面板 -->
                 <div id="backgroundPanel" class="content-panel">
                     <div class="panel-header">
@@ -418,6 +498,13 @@
                 </div>
 
                 <div class="form-group">
+                    <label>标签</label>
+                    <div id="siteTagsContainer" class="tags-select-container">
+                        <!-- 标签复选框将在这里动态生成 -->
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>Logo</label>
                     <div class="logo-input-group">
                         <input type="text" id="siteLogo" class="form-input" placeholder="输入远程URL或点击获取">
@@ -478,6 +565,35 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeCategoryModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 标签模态框 -->
+    <div id="tagModal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="tagModalTitle">添加标签</h3>
+                <button class="modal-close" onclick="closeTagModal()">✕</button>
+            </div>
+
+            <form id="tagForm" class="modal-body">
+                <input type="hidden" id="tagId">
+
+                <div class="form-group">
+                    <label for="tagName">标签名称 *</label>
+                    <input type="text" id="tagName" class="form-input" required placeholder="如：常用、免费、推荐">
+                </div>
+
+                <div class="form-group">
+                    <label for="tagColor">标签颜色</label>
+                    <input type="color" id="tagColor" class="form-input color-input" value="#6366f1">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeTagModal()">取消</button>
                     <button type="submit" class="btn-primary">保存</button>
                 </div>
             </form>

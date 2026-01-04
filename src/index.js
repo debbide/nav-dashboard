@@ -549,8 +549,8 @@ async function getSites(request, env, corsHeaders) {
 
     // 获取分页数据
     const dataQuery = `
-        SELECT s.*, c.name as category_name, c.color as category_color 
-        FROM sites s 
+        SELECT s.*, c.name as category_name, c.color as category_color
+        FROM sites s
         LEFT JOIN categories c ON s.category_id = c.id
         ${whereClause}
         ORDER BY s.sort_order ASC, s.created_at DESC
@@ -558,6 +558,37 @@ async function getSites(request, env, corsHeaders) {
     `;
     const dataParams = [...params, pageSize, offset];
     const { results } = await env.DB.prepare(dataQuery).bind(...dataParams).all();
+
+    // 获取所有站点的标签（批量查询优化）
+    if (results.length > 0) {
+        const siteIds = results.map(s => s.id);
+        const placeholders = siteIds.map(() => '?').join(',');
+        const tagsQuery = `
+            SELECT st.site_id, t.id, t.name, t.color
+            FROM site_tags st
+            INNER JOIN tags t ON st.tag_id = t.id
+            WHERE st.site_id IN (${placeholders})
+        `;
+        const { results: tagResults } = await env.DB.prepare(tagsQuery).bind(...siteIds).all();
+
+        // 将标签按站点分组
+        const tagsBySite = {};
+        for (const tag of tagResults) {
+            if (!tagsBySite[tag.site_id]) {
+                tagsBySite[tag.site_id] = [];
+            }
+            tagsBySite[tag.site_id].push({
+                id: tag.id,
+                name: tag.name,
+                color: tag.color
+            });
+        }
+
+        // 将标签添加到站点数据中
+        for (const site of results) {
+            site.tags = tagsBySite[site.id] || [];
+        }
+    }
 
     return jsonResponse({
         success: true,
@@ -1734,6 +1765,35 @@ async function filterSitesByTags(request, env, headers) {
     const { results } = await env.DB.prepare(dataQuery)
         .bind(...tagIdArray, tagIdArray.length, pageSize, offset)
         .all();
+
+    // 获取所有站点的标签
+    if (results.length > 0) {
+        const siteIds = results.map(s => s.id);
+        const sitePlaceholders = siteIds.map(() => '?').join(',');
+        const tagsQuery = `
+            SELECT st.site_id, t.id, t.name, t.color
+            FROM site_tags st
+            INNER JOIN tags t ON st.tag_id = t.id
+            WHERE st.site_id IN (${sitePlaceholders})
+        `;
+        const { results: tagResults } = await env.DB.prepare(tagsQuery).bind(...siteIds).all();
+
+        const tagsBySite = {};
+        for (const tag of tagResults) {
+            if (!tagsBySite[tag.site_id]) {
+                tagsBySite[tag.site_id] = [];
+            }
+            tagsBySite[tag.site_id].push({
+                id: tag.id,
+                name: tag.name,
+                color: tag.color
+            });
+        }
+
+        for (const site of results) {
+            site.tags = tagsBySite[site.id] || [];
+        }
+    }
 
     return jsonResponse({
         success: true,

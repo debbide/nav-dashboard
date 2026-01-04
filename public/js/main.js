@@ -4,7 +4,7 @@
  */
 
 // 导入模块
-import { initTheme, loadBackground, loadCategories, setupTooltip } from './modules/ui.js';
+import { initTheme, loadBackground, loadCategories, loadTags, setupTooltip } from './modules/ui.js';
 import { setupSearch, setupKeyboardShortcuts } from './modules/search.js';
 import { setupInfiniteScroll } from './modules/lazyload.js';
 import { registerServiceWorker, initPwaPrompt, setupCopyLinks } from './modules/pwa.js';
@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI
     loadBackground();
     loadCategories();
+    loadTags();  // 加载标签筛选器
     setupTooltip();
 
     // 搜索

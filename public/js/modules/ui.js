@@ -2,7 +2,7 @@
  * UI 模块 - DOM 操作和渲染
  */
 
-import { fetchSites, fetchCategories, fetchBackground } from './api.js';
+import { fetchSites, fetchCategories, fetchBackground, fetchTags, fetchSitesByTags } from './api.js';
 import { setupLazyLoad, updateLoadMoreTrigger } from './lazyload.js';
 
 // 分页状态
@@ -11,6 +11,8 @@ export let isLoading = false;
 export let hasMore = true;
 export let currentCategory = 'all';
 export let currentSearchTerm = '';
+export let currentTagFilter = [];  // 当前选中的标签ID列表
+export let allTags = [];  // 所有标签缓存
 
 // 默认图标路径
 export const DEFAULT_ICON = '/default-icon.png';
@@ -24,6 +26,7 @@ export function updatePaginationState(state) {
     if (state.hasMore !== undefined) hasMore = state.hasMore;
     if (state.currentCategory !== undefined) currentCategory = state.currentCategory;
     if (state.currentSearchTerm !== undefined) currentSearchTerm = state.currentSearchTerm;
+    if (state.currentTagFilter !== undefined) currentTagFilter = state.currentTagFilter;
 }
 
 /**
@@ -85,6 +88,21 @@ export function createSiteCard(site) {
     card.dataset.tooltip = site.name;
     card.dataset.url = site.url;
 
+    // 生成标签徽章 HTML
+    let tagsHtml = '';
+    if (site.tags && site.tags.length > 0) {
+        const displayTags = site.tags.slice(0, 2);  // 最多显示2个标签
+        tagsHtml = `
+            <div class="site-card-tags">
+                ${displayTags.map(tag => `
+                    <span class="site-tag-badge" style="background-color: ${tag.color}" title="${tag.name}">
+                        ${tag.name}
+                    </span>
+                `).join('')}
+            </div>
+        `;
+    }
+
     card.innerHTML = `
         <div class="logo-wrapper">
             <div class="logo-placeholder"></div>
@@ -93,6 +111,7 @@ export function createSiteCard(site) {
                  alt="${site.name}">
         </div>
         <span class="site-name">${site.name}</span>
+        ${tagsHtml}
     `;
 
     // 点击跳转
@@ -205,6 +224,144 @@ export async function loadCategories() {
     } catch (error) {
         console.error('加载分类失败:', error);
     }
+}
+
+/**
+ * 加载标签
+ */
+export async function loadTags() {
+    try {
+        const data = await fetchTags();
+
+        if (data.success) {
+            allTags = data.data;
+            renderTagsFilter();
+        }
+    } catch (error) {
+        console.error('加载标签失败:', error);
+    }
+}
+
+/**
+ * 渲染标签筛选器
+ */
+export function renderTagsFilter() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar || allTags.length === 0) return;
+
+    // 检查是否已存在标签筛选器
+    let tagsContainer = document.getElementById('tagsFilter');
+    if (!tagsContainer) {
+        tagsContainer = document.createElement('div');
+        tagsContainer.id = 'tagsFilter';
+        tagsContainer.className = 'tags-filter';
+        sidebar.appendChild(tagsContainer);
+    }
+
+    tagsContainer.innerHTML = `
+        <div class="tags-filter-header">🏷️ 标签筛选</div>
+        <div class="tags-filter-list">
+            ${allTags.map(tag => `
+                <button class="tag-filter-btn${currentTagFilter.includes(tag.id) ? ' active' : ''}"
+                        data-tag-id="${tag.id}"
+                        style="--tag-color: ${tag.color}">
+                    ${escapeHtml(tag.name)}
+                </button>
+            `).join('')}
+        </div>
+        ${currentTagFilter.length > 0 ? `
+            <button class="tag-filter-clear" onclick="window.clearTagFilter()">
+                清除筛选
+            </button>
+        ` : ''}
+    `;
+
+    // 绑定标签点击事件
+    tagsContainer.querySelectorAll('.tag-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tagId = parseInt(btn.dataset.tagId);
+            toggleTagFilter(tagId);
+        });
+    });
+}
+
+/**
+ * 切换标签筛选
+ */
+export function toggleTagFilter(tagId) {
+    const index = currentTagFilter.indexOf(tagId);
+    if (index === -1) {
+        currentTagFilter.push(tagId);
+    } else {
+        currentTagFilter.splice(index, 1);
+    }
+
+    // 更新 UI
+    renderTagsFilter();
+
+    // 加载筛选后的站点
+    loadSitesByTagFilter();
+}
+
+/**
+ * 清除标签筛选
+ */
+export function clearTagFilter() {
+    currentTagFilter = [];
+    renderTagsFilter();
+
+    // 恢复加载当前分类
+    loadSites(currentCategory, currentSearchTerm);
+}
+
+// 暴露到全局
+window.clearTagFilter = clearTagFilter;
+
+/**
+ * 按标签筛选加载站点
+ */
+export async function loadSitesByTagFilter() {
+    if (currentTagFilter.length === 0) {
+        loadSites(currentCategory, currentSearchTerm);
+        return;
+    }
+
+    // 重置分页状态
+    updatePaginationState({
+        currentPage: 1,
+        hasMore: true
+    });
+
+    showSkeletons();
+
+    try {
+        const data = await fetchSitesByTags(currentTagFilter, 1);
+
+        if (data.success) {
+            hideSkeletons();
+            setTimeout(() => {
+                renderSites(data.data, false);
+                setupLazyLoad();
+
+                if (data.pagination) {
+                    updatePaginationState({ hasMore: data.pagination.hasMore });
+                    updateLoadMoreTrigger();
+                }
+            }, 150);
+        }
+    } catch (error) {
+        console.error('按标签加载站点失败:', error);
+        document.getElementById('sitesGrid').innerHTML = '<div class="no-results">加载失败，请刷新重试</div>';
+    }
+}
+
+/**
+ * HTML 转义
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**
