@@ -145,6 +145,50 @@
             color: #ff5252;
             display: block;
         }
+
+        /* 标签选择器样式 */
+        .tags-select-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            min-height: 40px;
+        }
+
+        .tag-checkbox {
+            display: none;
+        }
+
+        .tag-checkbox + label {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            opacity: 0.6;
+        }
+
+        .tag-checkbox:checked + label {
+            opacity: 1;
+            border-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .tag-checkbox + label:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .empty-tags-hint {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            padding: 0.5rem;
+        }
     </style>
 </head>
 
@@ -180,6 +224,10 @@
                         <span>📁</span>
                         <span>分类管理</span>
                     </button>
+                    <button class="nav-item" data-tab="tags">
+                        <span>🏷️</span>
+                        <span>标签管理</span>
+                    </button>
                     <button class="nav-item" data-tab="background">
                         <span>🖼️</span>
                         <span>背景设置</span>
@@ -187,10 +235,6 @@
                     <button class="nav-item" data-tab="password">
                         <span>🔑</span>
                         <span>密码设置</span>
-                    </button>
-                    <button class="nav-item" data-tab="backup">
-                        <span>☁️</span>
-                        <span>云端备份</span>
                     </button>
                 </nav>
             </aside>
@@ -308,6 +352,38 @@
                     </div>
                 </div>
 
+                <!-- 标签管理面板 -->
+                <div id="tagsPanel" class="content-panel">
+                    <div class="panel-header">
+                        <h2>🏷️ 标签管理</h2>
+                        <button class="btn-primary" onclick="openTagModal()">
+                            <span>➕</span>
+                            <span>添加标签</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>颜色</th>
+                                    <th>名称</th>
+                                    <th>站点数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tagsTableBody">
+                                <tr>
+                                    <td colspan="4" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <span>加载中...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- 背景设置面板 -->
                 <div id="backgroundPanel" class="content-panel">
                     <div class="panel-header">
@@ -384,62 +460,6 @@
                     </div>
                 </div>
 
-                <!-- 云端备份面板 -->
-                <div id="backupPanel" class="content-panel">
-                    <div class="panel-header">
-                        <h2> 云端备份</h2>
-                    </div>
-                    <div class="table-container glass-effect" style="padding: 2rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                            <div>
-                                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">WebDAV 配置</h3>
-                                <div class="form-group">
-                                    <label>WebDAV 地址</label>
-                                    <input type="url" id="webdavUrl" class="form-input"
-                                        placeholder="https://dav.jianguoyun.com/dav/">
-                                </div>
-                                <div class="form-group">
-                                    <label>用户名</label>
-                                    <input type="text" id="webdavUsername" class="form-input"
-                                        placeholder="your@email.com">
-                                </div>
-                                <div class="form-group">
-                                    <label>密码/应用密码</label>
-                                    <input type="password" id="webdavPassword" class="form-input" placeholder="留空表示不修改">
-                                </div>
-                                <div class="form-group">
-                                    <label>自动备份频率</label>
-                                    <select id="backupFrequency" class="form-input">
-                                        <option value="off">关闭</option>
-                                        <option value="daily">每天</option>
-                                        <option value="weekly">每周</option>
-                                    </select>
-                                </div>
-                                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                                    <button id="testConnectionBtn" class="btn-secondary"> 测试连接</button>
-                                    <button id="saveBackupConfigBtn" class="btn-primary"> 保存配置</button>
-                                </div>
-                                <div id="backupMsg" class="password-msg" style="display:none; margin-top: 1rem;"></div>
-                                <div id="lastBackupStatus"
-                                    style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9rem;">
-                                </div>
-                            </div>
-                            <div>
-                                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">备份操作</h3>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                    <button id="backupNowBtn" class="btn-primary"> 立即备份</button>
-                                    <button id="refreshBackupsBtn" class="btn-secondary"> 刷新列表</button>
-                                </div>
-                                <h4 style="margin: 1rem 0 0.5rem; font-size: 0.95rem;">云端备份文件</h4>
-                                <div id="backupList" style="max-height: 300px; overflow-y: auto;">
-                                    <div style="text-align:center; padding:1rem; opacity:0.7;">请先配置 WebDAV 并点击"刷新列表"
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </section>
         </main>
     </div>
@@ -475,6 +495,13 @@
                     <select id="siteCategory" class="form-input">
                         <option value="">无分类</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label>标签</label>
+                    <div id="siteTagsContainer" class="tags-select-container">
+                        <!-- 标签复选框将在这里动态生成 -->
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -538,6 +565,35 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeCategoryModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 标签模态框 -->
+    <div id="tagModal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="tagModalTitle">添加标签</h3>
+                <button class="modal-close" onclick="closeTagModal()">✕</button>
+            </div>
+
+            <form id="tagForm" class="modal-body">
+                <input type="hidden" id="tagId">
+
+                <div class="form-group">
+                    <label for="tagName">标签名称 *</label>
+                    <input type="text" id="tagName" class="form-input" required placeholder="如：常用、免费、推荐">
+                </div>
+
+                <div class="form-group">
+                    <label for="tagColor">标签颜色</label>
+                    <input type="color" id="tagColor" class="form-input color-input" value="#6366f1">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeTagModal()">取消</button>
                     <button type="submit" class="btn-primary">保存</button>
                 </div>
             </form>
@@ -644,7 +700,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="/js/admin.js"></script>
     <script src="/js/data-manager.js"></script>
-    <script src="/js/backup.js"></script>
 </body>
 
 </html>

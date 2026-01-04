@@ -4,9 +4,11 @@ const API_BASE = '';  // 空字符串表示相对路径
 // 全局状态
 let sites = [];
 let categories = [];
+let tags = [];  // 新增：标签列表
 let currentTab = 'sites';
 let editingSiteId = null;
 let editingCategoryId = null;
+let editingTagId = null;  // 新增：编辑中的标签ID
 let currentCategoryFilter = 'all';  // 当前分类筛选
 let currentSearchTerm = '';  // 当前搜索关键词
 
@@ -33,13 +35,14 @@ async function init() {
     // 绑定表单提交
     document.getElementById('siteForm').addEventListener('submit', handleSiteSubmit);
     document.getElementById('categoryForm').addEventListener('submit', handleCategorySubmit);
+    document.getElementById('tagForm').addEventListener('submit', handleTagSubmit);  // 新增：标签表单
 
     // 监听 Logo URL 输入变化
     document.getElementById('siteLogo').addEventListener('input', (e) => {
         updateLogoPreview(e.target.value);
     });
 
-    // 动态添加Logo获取按钮
+    // 动态添加两个"获取Logo"按钮
     const logoInputGroup = document.querySelector('.logo-input-group');
     if (logoInputGroup) {
         const uploadBtn = logoInputGroup.querySelector('.btn-upload');
@@ -50,45 +53,30 @@ async function init() {
             existingFetchBtn.remove();
         }
 
-        // 创建按钮容器
-        const btnContainer = document.createElement('div');
-        btnContainer.style.cssText = 'display: flex; gap: 4px;';
-
         // 按钮1: Google Favicon
         const fetchBtn1 = document.createElement('button');
         fetchBtn1.type = 'button';
         fetchBtn1.className = 'btn-secondary';
-        fetchBtn1.style.cssText = 'padding: 6px 10px; min-width: auto;';
-        fetchBtn1.innerHTML = '<img src="https://www.google.com/favicon.ico" alt="G" style="width:16px;height:16px;vertical-align:middle">';
+        fetchBtn1.style.whiteSpace = 'nowrap';
+        fetchBtn1.innerHTML = '🔍 获取1';
         fetchBtn1.title = 'Google源';
         fetchBtn1.onclick = autoFetchLogo;
+        logoInputGroup.insertBefore(fetchBtn1, uploadBtn);
 
         // 按钮2: toolb.cn Favicon
         const fetchBtn2 = document.createElement('button');
         fetchBtn2.type = 'button';
         fetchBtn2.className = 'btn-secondary';
-        fetchBtn2.style.cssText = 'padding: 6px 10px; min-width: auto;';
-        fetchBtn2.innerHTML = '<img src="https://toolb.cn/favicon.ico" alt="T" style="width:16px;height:16px;vertical-align:middle">';
+        fetchBtn2.style.whiteSpace = 'nowrap';
+        fetchBtn2.innerHTML = '🔍 获取2';
         fetchBtn2.title = 'toolb.cn源';
         fetchBtn2.onclick = autoFetchLogo2;
-
-        // 按钮3: 默认图标
-        const defaultBtn = document.createElement('button');
-        defaultBtn.type = 'button';
-        defaultBtn.className = 'btn-secondary';
-        defaultBtn.style.cssText = 'padding: 6px 10px; min-width: auto;';
-        defaultBtn.innerHTML = '🌐';
-        defaultBtn.title = '使用默认图标';
-        defaultBtn.onclick = useDefaultLogo;
-
-        btnContainer.appendChild(fetchBtn1);
-        btnContainer.appendChild(fetchBtn2);
-        btnContainer.appendChild(defaultBtn);
-        logoInputGroup.insertBefore(btnContainer, uploadBtn);
+        logoInputGroup.insertBefore(fetchBtn2, uploadBtn);
     }
 
     // 加载数据
     await loadCategories();
+    await loadTags();  // 新增：加载标签
     await loadSites();
 }
 
@@ -239,6 +227,9 @@ function openSiteModal() {
     // 填充分类选择器
     populateCategorySelect();
 
+    // 填充标签选择器（无选中）
+    populateSiteTagsSelect([]);
+
     // 清空预览
     document.getElementById('logoPreview').classList.remove('active');
 
@@ -246,7 +237,7 @@ function openSiteModal() {
 }
 
 // 编辑站点
-function editSite(id) {
+async function editSite(id) {
     const site = sites.find(s => s.id === id);
     if (!site) return;
 
@@ -262,6 +253,10 @@ function editSite(id) {
 
     // 填充分类选择器
     populateCategorySelect();
+
+    // 加载并填充标签选择器
+    const selectedTagIds = await loadSiteTags(id);
+    populateSiteTagsSelect(selectedTagIds);
 
     // 更新预览
     updateLogoPreview(site.logo);
@@ -299,6 +294,9 @@ async function handleSiteSubmit(e) {
         sort_order: parseInt(document.getElementById('siteSortOrder').value) || 0
     };
 
+    // 获取选中的标签
+    const selectedTagIds = getSelectedTagIds();
+
     try {
         const url = editingSiteId ? `/api/sites/${editingSiteId}` : '/api/sites';
         const method = editingSiteId ? 'PUT' : 'POST';
@@ -312,6 +310,17 @@ async function handleSiteSubmit(e) {
         const result = await response.json();
 
         if (result.success) {
+            // 获取站点ID（新建时从返回结果获取，编辑时使用现有ID）
+            const siteId = editingSiteId || result.data?.id;
+
+            // 保存标签关联
+            if (siteId && selectedTagIds.length > 0) {
+                await saveSiteTags(siteId, selectedTagIds);
+            } else if (siteId && editingSiteId) {
+                // 编辑时如果没有选中任何标签，清空标签
+                await saveSiteTags(siteId, []);
+            }
+
             showNotification(editingSiteId ? '站点更新成功' : '站点添加成功', 'success');
             closeSiteModal();
             await loadSites();
@@ -369,7 +378,7 @@ function populateCategoryFilter() {
     if (!select) return;
 
     const currentValue = select.value;
-    select.innerHTML = '<option value="all">🔯 全部分类</option>' +
+    select.innerHTML = '<option value="all">📁 全部分类</option>' +
         categories.map(cat => `<option value="${cat.id}">${cat.icon || '📁'} ${cat.name}</option>`).join('');
     select.value = currentValue;
 }
@@ -649,15 +658,6 @@ function autoFetchLogo2() {
     }
 }
 
-// 使用默认图标
-function useDefaultLogo() {
-    const logoInput = document.getElementById('siteLogo');
-    const defaultIcon = '/default-icon.png';
-    logoInput.value = defaultIcon;
-    updateLogoPreview(defaultIcon);
-    showNotification('已设置默认图标', 'success');
-}
-
 // HTML 转义
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -779,6 +779,8 @@ window.switchTab = function (tabName) {
     originalSwitchTab(tabName);
     if (tabName === 'background') {
         initBackgroundSettings();
+    } else if (tabName === 'tags') {
+        loadTags();  // 切换到标签页时刷新标签列表
     }
 };
 
@@ -858,4 +860,196 @@ function filterSitesBySearch() {
     currentSearchTerm = input.value.trim();
     currentPage = 1;  // 搜索时重置页码
     loadSites();
+}
+
+// ==================== 标签管理 ====================
+
+// 加载标签列表
+async function loadTags() {
+    try {
+        const response = await fetch('/api/tags');
+        const result = await response.json();
+
+        if (result.success) {
+            tags = result.data;
+            renderTagsTable();
+        }
+    } catch (error) {
+        console.error('加载标签失败:', error);
+    }
+}
+
+// 渲染标签表格
+function renderTagsTable() {
+    const tbody = document.getElementById('tagsTableBody');
+    if (!tbody) return;
+
+    if (tags.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">暂无标签，点击"添加标签"创建</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = tags.map(tag => `
+    <tr data-id="${tag.id}">
+      <td>
+        <span class="color-badge" style="background-color: ${tag.color}; width: 24px; height: 24px; border-radius: 50%; display: inline-block;"></span>
+      </td>
+      <td>
+        <span class="tag-badge" style="background-color: ${tag.color}; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">
+          ${escapeHtml(tag.name)}
+        </span>
+      </td>
+      <td>${tag.sites_count || 0}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-icon" onclick="editTag(${tag.id})" title="编辑">✏️</button>
+          <button class="btn-icon danger" onclick="deleteTag(${tag.id})" title="删除">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 打开标签模态框（新建）
+function openTagModal() {
+    editingTagId = null;
+    document.getElementById('tagModalTitle').textContent = '添加标签';
+    document.getElementById('tagForm').reset();
+    document.getElementById('tagId').value = '';
+    document.getElementById('tagColor').value = '#6366f1';
+
+    document.getElementById('tagModal').classList.add('active');
+}
+
+// 编辑标签
+function editTag(id) {
+    const tag = tags.find(t => t.id === id);
+    if (!tag) return;
+
+    editingTagId = id;
+    document.getElementById('tagModalTitle').textContent = '编辑标签';
+    document.getElementById('tagId').value = id;
+    document.getElementById('tagName').value = tag.name;
+    document.getElementById('tagColor').value = tag.color || '#6366f1';
+
+    document.getElementById('tagModal').classList.add('active');
+}
+
+// 关闭标签模态框
+function closeTagModal() {
+    document.getElementById('tagModal').classList.remove('active');
+    editingTagId = null;
+}
+
+// 处理标签表单提交
+async function handleTagSubmit(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('tagName').value.trim(),
+        color: document.getElementById('tagColor').value
+    };
+
+    if (!data.name) {
+        showNotification('请输入标签名称', 'error');
+        return;
+    }
+
+    try {
+        const url = editingTagId ? `/api/tags/${editingTagId}` : '/api/tags';
+        const method = editingTagId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(editingTagId ? '标签更新成功' : '标签添加成功', 'success');
+            closeTagModal();
+            await loadTags();
+        } else {
+            showNotification(result.message || '操作失败', 'error');
+        }
+    } catch (error) {
+        console.error('保存标签失败:', error);
+        showNotification('保存失败', 'error');
+    }
+}
+
+// 删除标签
+async function deleteTag(id) {
+    if (!confirm('确定要删除这个标签吗？')) return;
+
+    try {
+        const response = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('标签删除成功', 'success');
+            await loadTags();
+        } else {
+            showNotification(result.message || '删除失败', 'error');
+        }
+    } catch (error) {
+        console.error('删除标签失败:', error);
+        showNotification('删除失败', 'error');
+    }
+}
+
+// ==================== 站点标签选择 ====================
+
+// 填充站点标签选择器
+function populateSiteTagsSelect(selectedTagIds = []) {
+    const container = document.getElementById('siteTagsContainer');
+    if (!container) return;
+
+    if (tags.length === 0) {
+        container.innerHTML = '<span class="empty-tags-hint">暂无标签，请先在"标签管理"中创建</span>';
+        return;
+    }
+
+    container.innerHTML = tags.map(tag => `
+        <input type="checkbox" class="tag-checkbox" id="siteTag_${tag.id}"
+               value="${tag.id}" ${selectedTagIds.includes(tag.id) ? 'checked' : ''}>
+        <label for="siteTag_${tag.id}" style="background-color: ${tag.color}; color: white;">
+            ${escapeHtml(tag.name)}
+        </label>
+    `).join('');
+}
+
+// 获取选中的标签IDs
+function getSelectedTagIds() {
+    const checkboxes = document.querySelectorAll('#siteTagsContainer .tag-checkbox:checked');
+    return Array.from(checkboxes).map(cb => parseInt(cb.value));
+}
+
+// 加载站点的标签
+async function loadSiteTags(siteId) {
+    try {
+        const response = await fetch(`/api/tags/site/${siteId}`);
+        const result = await response.json();
+        if (result.success) {
+            return result.data.map(t => t.id);
+        }
+    } catch (error) {
+        console.error('加载站点标签失败:', error);
+    }
+    return [];
+}
+
+// 保存站点的标签
+async function saveSiteTags(siteId, tagIds) {
+    try {
+        await fetch(`/api/tags/site/${siteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag_ids: tagIds })
+        });
+    } catch (error) {
+        console.error('保存站点标签失败:', error);
+    }
 }

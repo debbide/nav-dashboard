@@ -47,6 +47,44 @@ router.get('/', (req, res) => {
     `);
     const results = dataStmt.all(...params, pageSizeNum, offset);
 
+    // 获取所有站点的标签（批量查询优化）
+    if (results.length > 0) {
+        try {
+            const siteIds = results.map(s => s.id);
+            const placeholders = siteIds.map(() => '?').join(',');
+            const tagsStmt = db.prepare(`
+                SELECT st.site_id, t.id, t.name, t.color
+                FROM site_tags st
+                INNER JOIN tags t ON st.tag_id = t.id
+                WHERE st.site_id IN (${placeholders})
+            `);
+            const tagResults = tagsStmt.all(...siteIds);
+
+            // 将标签按站点分组
+            const tagsBySite = {};
+            for (const tag of tagResults) {
+                if (!tagsBySite[tag.site_id]) {
+                    tagsBySite[tag.site_id] = [];
+                }
+                tagsBySite[tag.site_id].push({
+                    id: tag.id,
+                    name: tag.name,
+                    color: tag.color
+                });
+            }
+
+            // 将标签添加到站点数据中
+            for (const site of results) {
+                site.tags = tagsBySite[site.id] || [];
+            }
+        } catch (e) {
+            // 标签表可能不存在，忽略错误
+            for (const site of results) {
+                site.tags = [];
+            }
+        }
+    }
+
     res.json({
         success: true,
         data: results,

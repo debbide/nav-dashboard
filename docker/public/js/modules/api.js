@@ -74,4 +74,21 @@ export async function saveSitesOrder(order) {
     return await response.json();
 }
 
+/**
+ * 获取标签列表
+ */
+export async function fetchTags() {
+    const response = await fetch(`${API_BASE}/api/tags`);
+    return await response.json();
+}
+
+/**
+ * 按标签筛选站点
+ */
+export async function fetchSitesByTags(tagIds, page = 1) {
+    const url = `${API_BASE}/api/tags/filter?tag_ids=${tagIds.join(',')}&page=${page}&pageSize=24`;
+    const response = await fetch(url);
+    return await response.json();
+}
+
 export { API_BASE };

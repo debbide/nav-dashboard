@@ -180,6 +180,41 @@ router.get('/filter', (req, res) => {
     `;
     const results = db.prepare(dataQuery).all(...tagIdArray, tagIdArray.length, pageSizeNum, offset);
 
+    // 获取所有站点的标签
+    if (results.length > 0) {
+        try {
+            const siteIds = results.map(s => s.id);
+            const sitePlaceholders = siteIds.map(() => '?').join(',');
+            const tagsStmt = db.prepare(`
+                SELECT st.site_id, t.id, t.name, t.color
+                FROM site_tags st
+                INNER JOIN tags t ON st.tag_id = t.id
+                WHERE st.site_id IN (${sitePlaceholders})
+            `);
+            const tagResults = tagsStmt.all(...siteIds);
+
+            const tagsBySite = {};
+            for (const tag of tagResults) {
+                if (!tagsBySite[tag.site_id]) {
+                    tagsBySite[tag.site_id] = [];
+                }
+                tagsBySite[tag.site_id].push({
+                    id: tag.id,
+                    name: tag.name,
+                    color: tag.color
+                });
+            }
+
+            for (const site of results) {
+                site.tags = tagsBySite[site.id] || [];
+            }
+        } catch (e) {
+            for (const site of results) {
+                site.tags = [];
+            }
+        }
+    }
+
     res.json({
         success: true,
         data: results,
