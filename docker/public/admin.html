@@ -519,17 +519,17 @@
                             <div class="form-group">
                                 <label for="oldPassword">原密码</label>
                                 <input type="password" id="oldPassword" class="form-input" placeholder="请输入原密码"
-                                    required autocomplete="current-password">
+                                    required autocomplete="off" disabled>
                             </div>
                             <div class="form-group">
                                 <label for="newPassword">新密码</label>
                                 <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（至少4位）"
-                                    required autocomplete="new-password">
+                                    required autocomplete="off" disabled>
                             </div>
                             <div class="form-group">
                                 <label for="confirmPassword">确认新密码</label>
                                 <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码"
-                                    required autocomplete="new-password">
+                                    required autocomplete="off" disabled>
                             </div>
                             <div class="form-actions" style="margin-top: 1.5rem;">
                                 <button type="submit" class="btn-primary">💾 修改密码</button>
@@ -696,6 +696,12 @@
             document.getElementById('adminContent').style.display = 'none';
         }
 
+        function enablePasswordForm() {
+            document.getElementById('oldPassword').disabled = false;
+            document.getElementById('newPassword').disabled = false;
+            document.getElementById('confirmPassword').disabled = false;
+        }
+
         async function checkPassword() {
             const input = document.getElementById('adminPassword').value;
             try {
@@ -710,6 +716,7 @@
                     document.getElementById('adminContent').style.display = 'block';
                     sessionStorage.setItem('adminLoggedIn', 'true');
                     sessionStorage.setItem('adminLoginTime', Date.now().toString());
+                    enablePasswordForm();
                 } else {
                     document.getElementById('loginError').textContent = '密码错误，请重试';
                 }
@@ -721,6 +728,7 @@
         if (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired()) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
+            enablePasswordForm();
         } else {
             sessionStorage.removeItem('adminLoggedIn');
             sessionStorage.removeItem('adminLoginTime');
