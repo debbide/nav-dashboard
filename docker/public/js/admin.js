@@ -781,6 +781,12 @@ window.switchTab = function (tabName) {
         initBackgroundSettings();
     } else if (tabName === 'tags') {
         loadTags();  // 切换到标签页时刷新标签列表
+    } else if (tabName === 'backup') {
+        // 切换到备份页时初始化
+        if (typeof initBackupPanel === 'function') {
+            initBackupPanel();
+            loadBackupList();
+        }
     }
 };
 
