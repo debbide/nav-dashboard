@@ -515,21 +515,21 @@
                         <h2>🔑 密码设置</h2>
                     </div>
                     <div class="table-container glass-effect" style="padding: 2rem;">
-                        <form id="passwordForm" class="password-form">
+                        <form id="passwordForm" class="password-form" autocomplete="off">
                             <div class="form-group">
                                 <label for="oldPassword">原密码</label>
                                 <input type="password" id="oldPassword" class="form-input" placeholder="请输入原密码"
-                                    required>
+                                    required autocomplete="current-password">
                             </div>
                             <div class="form-group">
                                 <label for="newPassword">新密码</label>
                                 <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（至少4位）"
-                                    required>
+                                    required autocomplete="new-password">
                             </div>
                             <div class="form-group">
                                 <label for="confirmPassword">确认新密码</label>
                                 <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码"
-                                    required>
+                                    required autocomplete="new-password">
                             </div>
                             <div class="form-actions" style="margin-top: 1.5rem;">
                                 <button type="submit" class="btn-primary">💾 修改密码</button>
