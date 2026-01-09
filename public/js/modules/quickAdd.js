@@ -26,8 +26,19 @@ export function initEditMode() {
     const confirmBtn = document.getElementById('passwordConfirmBtn');
     const cancelBtn = document.getElementById('passwordCancelBtn');
     const passwordError = document.getElementById('passwordError');
+    const modalTitle = passwordModal?.querySelector('h3');
+    const modalDesc = passwordModal?.querySelector('p');
 
     if (!gearMenuBtn || !gearMenu) return;
+
+    // 显示密码框的辅助函数
+    function showPasswordModal(title, desc) {
+        if (modalTitle) modalTitle.textContent = title;
+        if (modalDesc) modalDesc.textContent = desc;
+        passwordModal.style.display = 'flex';
+        passwordInput.focus();
+        passwordError.textContent = '';
+    }
 
     // 齿轮菜单显示/隐藏
     gearMenuBtn.addEventListener('click', (e) => {
@@ -64,9 +75,7 @@ export function initEditMode() {
                     editModeBtn.querySelector('span:last-child').textContent = '退出编辑';
                 } else {
                     pendingAdminRedirect = false;
-                    passwordModal.style.display = 'flex';
-                    passwordInput.focus();
-                    passwordError.textContent = '';
+                    showPasswordModal('🔐 解锁编辑模式', '输入管理密码以启用拖拽排序');
                 }
             }
         });
@@ -87,9 +96,7 @@ export function initEditMode() {
                 pendingQuickAddAction = null;
                 // 延迟显示密码框，避免被 document click 事件关闭
                 setTimeout(() => {
-                    passwordModal.style.display = 'flex';
-                    passwordInput.focus();
-                    passwordError.textContent = '';
+                    showPasswordModal('⚙️ 管理后台', '输入管理密码以进入后台');
                 }, 10);
             }
         });
