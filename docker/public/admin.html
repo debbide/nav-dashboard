@@ -202,6 +202,12 @@
             color: #ff5252;
             display: block !important;
         }
+
+        /* WebDAV密码字段 - 初始为text类型避免干扰密码管理器，但显示为密码样式 */
+        .webdav-password-field {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
     </style>
 </head>
 
@@ -477,7 +483,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="webdavPassword">密码</label>
-                                    <input type="password" id="webdavPassword" class="form-input" placeholder="密码（留空则不修改）">
+                                    <input type="text" id="webdavPassword" class="form-input webdav-password-field" placeholder="密码（留空则不修改）" autocomplete="off">
                                 </div>
                                 <div class="form-group">
                                     <label for="backupFrequency">自动备份频率</label>
