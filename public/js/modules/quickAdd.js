@@ -74,7 +74,8 @@ export function initEditMode() {
 
     // 管理后台按钮
     if (adminBtn) {
-        adminBtn.addEventListener('click', () => {
+        adminBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             gearMenu.style.display = 'none';
 
             // 如果已经验证过，直接跳转
@@ -84,9 +85,12 @@ export function initEditMode() {
                 // 需要验证密码
                 pendingAdminRedirect = true;
                 pendingQuickAddAction = null;
-                passwordModal.style.display = 'flex';
-                passwordInput.focus();
-                passwordError.textContent = '';
+                // 延迟显示密码框，避免被 document click 事件关闭
+                setTimeout(() => {
+                    passwordModal.style.display = 'flex';
+                    passwordInput.focus();
+                    passwordError.textContent = '';
+                }, 10);
             }
         });
     }
