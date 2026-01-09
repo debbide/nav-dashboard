@@ -787,6 +787,11 @@ window.switchTab = function (tabName) {
             initBackupPanel();
             loadBackupList();
         }
+    } else if (tabName === 'password') {
+        // 动态生成密码表单，避免影响密码管理器检测登录表单
+        if (typeof createPasswordForm === 'function') {
+            createPasswordForm();
+        }
     }
 };
 

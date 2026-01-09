@@ -445,28 +445,8 @@
                     <div class="panel-header">
                         <h2>🔑 密码设置</h2>
                     </div>
-                    <div class="table-container glass-effect" style="padding: 2rem;">
-                        <form id="passwordForm" class="password-form" autocomplete="off">
-                            <div class="form-group">
-                                <label for="oldPassword">原密码</label>
-                                <input type="password" id="oldPassword" class="form-input" placeholder="请输入原密码"
-                                    required autocomplete="off" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label for="newPassword">新密码</label>
-                                <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（至少4位）"
-                                    required autocomplete="off" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label for="confirmPassword">确认新密码</label>
-                                <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码"
-                                    required autocomplete="off" disabled>
-                            </div>
-                            <div class="form-actions" style="margin-top: 1.5rem;">
-                                <button type="submit" class="btn-primary">💾 修改密码</button>
-                            </div>
-                            <div id="passwordMsg" class="password-msg"></div>
-                        </form>
+                    <div id="passwordFormContainer" class="table-container glass-effect" style="padding: 2rem;">
+                        <!-- 密码表单将在切换到此面板时动态生成 -->
                     </div>
                 </div>
 
@@ -628,52 +608,40 @@
         }
 
         function enablePasswordForm() {
-            document.getElementById('oldPassword').disabled = false;
-            document.getElementById('newPassword').disabled = false;
-            document.getElementById('confirmPassword').disabled = false;
+            // 不再需要，改为动态生成
         }
 
-        async function checkPassword() {
-            const input = document.getElementById('adminPassword').value;
-            try {
-                const response = await fetch('/api/auth/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: input })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('adminContent').style.display = 'block';
-                    sessionStorage.setItem('adminLoggedIn', 'true');
-                    sessionStorage.setItem('adminLoginTime', Date.now().toString());
-                    enablePasswordForm();
-                } else {
-                    document.getElementById('loginError').textContent = '密码错误，请重试';
-                }
-            } catch (error) {
-                document.getElementById('loginError').textContent = '验证失败，请重试';
-            }
+        // 动态生成密码表单
+        function createPasswordForm() {
+            const container = document.getElementById('passwordFormContainer');
+            if (container.querySelector('#passwordForm')) return; // 已存在则跳过
+
+            container.innerHTML = `
+                <form id="passwordForm" class="password-form" autocomplete="off">
+                    <div class="form-group">
+                        <label for="oldPassword">原密码</label>
+                        <input type="password" id="oldPassword" class="form-input" placeholder="请输入原密码" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">新密码</label>
+                        <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（至少4位）" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">确认新密码</label>
+                        <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码" required autocomplete="off">
+                    </div>
+                    <div class="form-actions" style="margin-top: 1.5rem;">
+                        <button type="submit" class="btn-primary">💾 修改密码</button>
+                    </div>
+                    <div id="passwordMsg" class="password-msg"></div>
+                </form>
+            `;
+
+            // 绑定表单提交事件
+            document.getElementById('passwordForm').addEventListener('submit', handlePasswordFormSubmit);
         }
 
-        if (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired()) {
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('adminContent').style.display = 'block';
-            enablePasswordForm();
-        } else {
-            sessionStorage.removeItem('adminLoggedIn');
-            sessionStorage.removeItem('adminLoginTime');
-        }
-
-        setInterval(() => {
-            if (sessionStorage.getItem('adminLoggedIn') === 'true' && isSessionExpired()) {
-                logout();
-                alert('登录已过期，请重新登录');
-            }
-        }, 60000);
-
-        // 密码修改表单
-        document.getElementById('passwordForm').addEventListener('submit', async function (e) {
+        async function handlePasswordFormSubmit(e) {
             e.preventDefault();
             const msgEl = document.getElementById('passwordMsg');
             const oldPassword = document.getElementById('oldPassword').value;
@@ -713,7 +681,44 @@
                 msgEl.textContent = '网络错误，请重试';
                 msgEl.className = 'password-msg error';
             }
-        });
+        }
+
+        async function checkPassword() {
+            const input = document.getElementById('adminPassword').value;
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: input })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                    sessionStorage.setItem('adminLoginTime', Date.now().toString());
+                } else {
+                    document.getElementById('loginError').textContent = '密码错误，请重试';
+                }
+            } catch (error) {
+                document.getElementById('loginError').textContent = '验证失败，请重试';
+            }
+        }
+
+        if (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired()) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+        } else {
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminLoginTime');
+        }
+
+        setInterval(() => {
+            if (sessionStorage.getItem('adminLoggedIn') === 'true' && isSessionExpired()) {
+                logout();
+                alert('登录已过期，请重新登录');
+            }
+        }, 60000);
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="/js/admin.js"></script>

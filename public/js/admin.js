@@ -781,6 +781,11 @@ window.switchTab = function (tabName) {
         initBackgroundSettings();
     } else if (tabName === 'tags') {
         loadTags();  // 切换到标签页时刷新标签列表
+    } else if (tabName === 'password') {
+        // 动态生成密码表单，避免影响密码管理器检测登录表单
+        if (typeof createPasswordForm === 'function') {
+            createPasswordForm();
+        }
     }
 };
 
