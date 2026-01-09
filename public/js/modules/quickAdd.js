@@ -10,6 +10,8 @@ const DEFAULT_ICON = '/default-icon.png';
 
 // 存储待执行的回调
 let pendingQuickAddAction = null;
+// 标记是否为管理后台验证
+let pendingAdminRedirect = false;
 
 /**
  * 初始化编辑模式
@@ -18,6 +20,7 @@ export function initEditMode() {
     const gearMenuBtn = document.getElementById('gearMenuBtn');
     const gearMenu = document.getElementById('gearMenu');
     const editModeBtn = document.getElementById('editModeBtn');
+    const adminBtn = document.getElementById('adminBtn');
     const passwordModal = document.getElementById('passwordModal');
     const passwordInput = document.getElementById('editPassword');
     const confirmBtn = document.getElementById('passwordConfirmBtn');
@@ -60,10 +63,30 @@ export function initEditMode() {
                     editModeBtn.classList.add('active');
                     editModeBtn.querySelector('span:last-child').textContent = '退出编辑';
                 } else {
+                    pendingAdminRedirect = false;
                     passwordModal.style.display = 'flex';
                     passwordInput.focus();
                     passwordError.textContent = '';
                 }
+            }
+        });
+    }
+
+    // 管理后台按钮
+    if (adminBtn) {
+        adminBtn.addEventListener('click', () => {
+            gearMenu.style.display = 'none';
+
+            // 如果已经验证过，直接跳转
+            if (sessionStorage.getItem('editModeUnlocked') === 'true') {
+                window.location.href = '/admin.html';
+            } else {
+                // 需要验证密码
+                pendingAdminRedirect = true;
+                pendingQuickAddAction = null;
+                passwordModal.style.display = 'flex';
+                passwordInput.focus();
+                passwordError.textContent = '';
             }
         });
     }
@@ -84,6 +107,7 @@ export function initEditMode() {
             passwordModal.style.display = 'none';
             passwordInput.value = '';
             passwordError.textContent = '';
+            pendingAdminRedirect = false;
         });
     }
 
@@ -93,6 +117,7 @@ export function initEditMode() {
             if (e.target === passwordModal) {
                 passwordModal.style.display = 'none';
                 passwordInput.value = '';
+                pendingAdminRedirect = false;
             }
         });
     }
@@ -114,6 +139,13 @@ async function handleVerifyPassword() {
             sessionStorage.setItem('editModeUnlocked', 'true');
             passwordModal.style.display = 'none';
             passwordInput.value = '';
+
+            // 如果是管理后台验证，跳转到管理页面
+            if (pendingAdminRedirect) {
+                pendingAdminRedirect = false;
+                window.location.href = '/admin.html';
+                return;
+            }
 
             if (pendingQuickAddAction) {
                 pendingQuickAddAction();

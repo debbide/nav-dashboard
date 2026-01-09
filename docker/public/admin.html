@@ -189,48 +189,15 @@
             font-size: 0.85rem;
             padding: 0.5rem;
         }
-
-        /* 备份消息样式 */
-        .backup-msg.success {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4caf50;
-            display: block !important;
-        }
-
-        .backup-msg.error {
-            background: rgba(255, 82, 82, 0.2);
-            color: #ff5252;
-            display: block !important;
-        }
-
-        /* WebDAV密码字段 - 初始为text类型避免干扰密码管理器，但显示为密码样式 */
-        .webdav-password-field {
-            -webkit-text-security: disc;
-            text-security: disc;
-        }
     </style>
 </head>
 
 <body>
-    <!-- 密码验证层 -->
+    <!-- 加载提示（未验证会立即跳转） -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box glass-effect">
             <h2>🔐 管理后台</h2>
-            <p>请输入管理密码</p>
-            <form id="loginForm" action="/api/auth/verify" method="post" autocomplete="on">
-                <input type="text" id="adminUsername" name="username" autocomplete="username" value="admin" readonly
-                    class="login-input" style="margin-bottom: 0.5rem; opacity: 0.7; cursor: default;">
-                <input type="password" id="adminPassword" name="password" class="login-input"
-                    placeholder="密码..." autocomplete="current-password">
-                <button type="submit" class="btn-primary login-btn">登录</button>
-            </form>
-            <script>
-                document.getElementById('loginForm').addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    checkPassword();
-                });
-            </script>
-            <p id="loginError" class="login-error"></p>
+            <p>正在验证...</p>
         </div>
     </div>
 
@@ -260,10 +227,6 @@
                     <button class="nav-item" data-tab="background">
                         <span>🖼️</span>
                         <span>背景设置</span>
-                    </button>
-                    <button class="nav-item" data-tab="backup">
-                        <span>☁️</span>
-                        <span>云端备份</span>
                     </button>
                     <button class="nav-item" data-tab="password">
                         <span>🔑</span>
@@ -463,58 +426,6 @@
                     </div>
                 </div>
 
-                <!-- 云端备份面板 -->
-                <div id="backupPanel" class="content-panel">
-                    <div class="panel-header">
-                        <h2>☁️ 云端备份</h2>
-                    </div>
-                    <div class="table-container glass-effect" style="padding: 2rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                            <!-- 左侧：配置 -->
-                            <div>
-                                <h3 style="margin-bottom: 1rem; color: rgba(255,255,255,0.9);">WebDAV 配置</h3>
-                                <div class="form-group">
-                                    <label for="webdavUrl">WebDAV 地址</label>
-                                    <input type="url" id="webdavUrl" class="form-input" placeholder="https://dav.example.com/path">
-                                </div>
-                                <div class="form-group">
-                                    <label for="webdavUsername">用户名</label>
-                                    <input type="text" id="webdavUsername" class="form-input" placeholder="用户名">
-                                </div>
-                                <div class="form-group">
-                                    <label for="webdavPassword">密码</label>
-                                    <input type="text" id="webdavPassword" class="form-input webdav-password-field" placeholder="密码（留空则不修改）" autocomplete="off">
-                                </div>
-                                <div class="form-group">
-                                    <label for="backupFrequency">自动备份频率</label>
-                                    <select id="backupFrequency" class="form-input">
-                                        <option value="off">关闭</option>
-                                        <option value="daily">每天</option>
-                                        <option value="weekly">每周</option>
-                                    </select>
-                                </div>
-                                <div id="lastBackupStatus" style="margin: 1rem 0; padding: 0.8rem; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9rem;"></div>
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <button type="button" id="testConnectionBtn" class="btn-secondary">🔗 测试连接</button>
-                                    <button type="button" id="saveBackupConfigBtn" class="btn-primary">💾 保存配置</button>
-                                    <button type="button" id="backupNowBtn" class="btn-primary">📤 立即备份</button>
-                                </div>
-                                <div id="backupMsg" class="backup-msg" style="margin-top: 1rem; padding: 0.8rem; border-radius: 8px; display: none;"></div>
-                            </div>
-                            <!-- 右侧：备份列表 -->
-                            <div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                    <h3 style="color: rgba(255,255,255,0.9);">云端备份列表</h3>
-                                    <button type="button" id="refreshBackupsBtn" class="btn-secondary" style="padding: 0.4rem 0.8rem;">🔄 刷新</button>
-                                </div>
-                                <div id="backupList" style="max-height: 400px; overflow-y: auto;">
-                                    <div style="text-align:center; padding:1rem; opacity:0.7;">点击刷新加载备份列表</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 密码设置面板 -->
                 <div id="passwordPanel" class="content-panel">
                     <div class="panel-header">
@@ -678,8 +589,9 @@
         function logout() {
             sessionStorage.removeItem('adminLoggedIn');
             sessionStorage.removeItem('adminLoginTime');
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('adminContent').style.display = 'none';
+            sessionStorage.removeItem('editModeUnlocked');
+            // 跳转回主页
+            window.location.href = '/';
         }
 
         function enablePasswordForm() {
@@ -758,34 +670,21 @@
             }
         }
 
-        async function checkPassword() {
-            const input = document.getElementById('adminPassword').value;
-            try {
-                const response = await fetch('/api/auth/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: input })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('adminContent').style.display = 'block';
-                    sessionStorage.setItem('adminLoggedIn', 'true');
-                    sessionStorage.setItem('adminLoginTime', Date.now().toString());
-                } else {
-                    document.getElementById('loginError').textContent = '密码错误，请重试';
-                }
-            } catch (error) {
-                document.getElementById('loginError').textContent = '验证失败，请重试';
-            }
-        }
-
-        if (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired()) {
+        // 检查是否从主页验证过来，或者已经在admin页面登录过
+        if (sessionStorage.getItem('editModeUnlocked') === 'true' ||
+            (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired())) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
+            // 同步登录状态
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            if (!sessionStorage.getItem('adminLoginTime')) {
+                sessionStorage.setItem('adminLoginTime', Date.now().toString());
+            }
         } else {
             sessionStorage.removeItem('adminLoggedIn');
             sessionStorage.removeItem('adminLoginTime');
+            // 未验证，跳转回主页
+            window.location.href = '/';
         }
 
         setInterval(() => {
@@ -797,7 +696,6 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="/js/admin.js"></script>
-    <script src="/js/backup.js"></script>
     <script src="/js/data-manager.js"></script>
 </body>
 

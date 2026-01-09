@@ -193,25 +193,11 @@
 </head>
 
 <body>
-    <!-- 密码验证层 -->
+    <!-- 加载提示（未验证会立即跳转） -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box glass-effect">
             <h2>🔐 管理后台</h2>
-            <p>请输入管理密码</p>
-            <form id="loginForm" action="/api/auth/verify" method="post" autocomplete="on">
-                <input type="text" id="adminUsername" name="username" autocomplete="username" value="admin" readonly
-                    class="login-input" style="margin-bottom: 0.5rem; opacity: 0.7; cursor: default;">
-                <input type="password" id="adminPassword" name="password" class="login-input"
-                    placeholder="密码..." autocomplete="current-password">
-                <button type="submit" class="btn-primary login-btn">登录</button>
-            </form>
-            <script>
-                document.getElementById('loginForm').addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    checkPassword();
-                });
-            </script>
-            <p id="loginError" class="login-error"></p>
+            <p>正在验证...</p>
         </div>
     </div>
 
@@ -603,8 +589,9 @@
         function logout() {
             sessionStorage.removeItem('adminLoggedIn');
             sessionStorage.removeItem('adminLoginTime');
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('adminContent').style.display = 'none';
+            sessionStorage.removeItem('editModeUnlocked');
+            // 跳转回主页
+            window.location.href = '/';
         }
 
         function enablePasswordForm() {
@@ -683,34 +670,21 @@
             }
         }
 
-        async function checkPassword() {
-            const input = document.getElementById('adminPassword').value;
-            try {
-                const response = await fetch('/api/auth/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: input })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('adminContent').style.display = 'block';
-                    sessionStorage.setItem('adminLoggedIn', 'true');
-                    sessionStorage.setItem('adminLoginTime', Date.now().toString());
-                } else {
-                    document.getElementById('loginError').textContent = '密码错误，请重试';
-                }
-            } catch (error) {
-                document.getElementById('loginError').textContent = '验证失败，请重试';
-            }
-        }
-
-        if (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired()) {
+        // 检查是否从主页验证过来，或者已经在admin页面登录过
+        if (sessionStorage.getItem('editModeUnlocked') === 'true' ||
+            (sessionStorage.getItem('adminLoggedIn') === 'true' && !isSessionExpired())) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
+            // 同步登录状态
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            if (!sessionStorage.getItem('adminLoginTime')) {
+                sessionStorage.setItem('adminLoginTime', Date.now().toString());
+            }
         } else {
             sessionStorage.removeItem('adminLoggedIn');
             sessionStorage.removeItem('adminLoginTime');
+            // 未验证，跳转回主页
+            window.location.href = '/';
         }
 
         setInterval(() => {
