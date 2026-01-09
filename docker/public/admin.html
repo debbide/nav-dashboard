@@ -211,10 +211,9 @@
         <div class="login-box glass-effect">
             <h2>🔐 管理后台</h2>
             <p>请输入管理密码</p>
-            <form id="loginForm" onsubmit="event.preventDefault(); checkPassword();" autocomplete="on">
-                <!-- 隐藏的用户名字段，帮助密码管理器识别 -->
-                <input type="text" name="username" autocomplete="username" value="admin"
-                    style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" tabindex="-1" aria-hidden="true">
+            <form id="loginForm" onsubmit="event.preventDefault(); checkPassword();" autocomplete="on" method="post">
+                <input type="text" name="username" autocomplete="username" value="admin" readonly
+                    class="login-input" style="margin-bottom: 0.5rem; opacity: 0.7; cursor: default;">
                 <input type="password" id="adminPassword" name="password" class="login-input"
                     placeholder="密码..." autocomplete="current-password">
                 <button type="submit" class="btn-primary login-btn">登录</button>
