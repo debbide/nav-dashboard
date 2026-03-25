@@ -5,6 +5,12 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const backup = require('../backup');
+const { requireAuth } = require('../middleware/auth');
+
+const MASKED_PASSWORD_PLACEHOLDER = '******';
+const VALID_BACKUP_FREQUENCIES = new Set(['off', 'daily', 'weekly']);
+
+router.use(requireAuth);
 
 // 获取备份配置
 router.get('/config', (req, res) => {
@@ -19,7 +25,16 @@ router.get('/config', (req, res) => {
 // 保存备份配置
 router.put('/config', (req, res) => {
     try {
-        const { webdav_url, webdav_username, webdav_password, backup_frequency } = req.body;
+        const { webdav_url, webdav_username, backup_frequency } = req.body;
+        let { webdav_password } = req.body;
+
+        if (backup_frequency !== undefined && !VALID_BACKUP_FREQUENCIES.has(backup_frequency)) {
+            return res.status(400).json({ success: false, message: 'backup_frequency 仅支持 off/daily/weekly' });
+        }
+
+        if (webdav_password === MASKED_PASSWORD_PLACEHOLDER) {
+            webdav_password = undefined;
+        }
 
         backup.saveBackupConfig(db, {
             webdav_url,

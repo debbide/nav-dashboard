@@ -4,8 +4,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { hashPassword } = require('../utils/hash');
+const { hashPassword, verifyPassword, sha256Hash } = require('../utils/hash');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/errorHandler');
 
 // ==================== 背景图设置 ====================
 
@@ -54,7 +55,7 @@ router.get('/theme', (req, res) => {
 });
 
 // 更新主题设置
-router.put('/theme', (req, res) => {
+router.put('/theme', requireAuth, (req, res) => {
     const { primaryColor, accentColor, cardStyle, cardRadius, darkMode } = req.body;
 
     // 验证颜色格式
@@ -128,7 +129,7 @@ router.get('/layout', (req, res) => {
 });
 
 // 更新布局设置
-router.put('/layout', (req, res) => {
+router.put('/layout', requireAuth, (req, res) => {
     const { viewMode, columns, cardSize, showDescription, showCategory } = req.body;
 
     // 验证视图模式
@@ -206,7 +207,7 @@ router.get('/password', (req, res) => {
 });
 
 // 修改密码
-router.put('/password', (req, res) => {
+router.put('/password', requireAuth, asyncHandler(async (req, res) => {
     const { old_password, new_password } = req.body;
     if (!new_password || new_password.length < 4) {
         return res.status(400).json({ error: '新密码不能少于4位' });
@@ -214,18 +215,26 @@ router.put('/password', (req, res) => {
 
     const result = db.prepare('SELECT value FROM settings WHERE key = ?').get('admin_password');
     const stored = result?.value || null;
-    const oldHash = hashPassword(old_password);
-    const isValid = stored === null
-        ? old_password === (process.env.ADMIN_PASSWORD || 'admin123')
-        : (stored === old_password || stored === oldHash);
+    const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    let isValid = false;
+
+    if (stored === null) {
+        isValid = old_password === defaultPassword;
+    } else if (stored.startsWith('$scrypt$')) {
+        isValid = await verifyPassword(old_password, stored);
+    } else if (stored.length === 64) {
+        isValid = sha256Hash(old_password) === stored;
+    } else {
+        isValid = old_password === stored;
+    }
 
     if (!isValid) {
         return res.status(401).json({ error: '原密码错误' });
     }
 
-    const newHash = hashPassword(new_password);
+    const newHash = await hashPassword(new_password);
     db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('admin_password', newHash);
     res.json({ message: '密码修改成功' });
-});
+}));
 
 module.exports = router;
