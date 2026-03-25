@@ -39,7 +39,7 @@ function injectDataManagement() {
                     <div class="form-group" style="margin-bottom: 2rem;">
                         <h3 style="margin-bottom: 1rem; color: white;">📤 导出数据</h3>
                         <p style="color: rgba(255,255,255,0.7); margin-bottom: 1rem;">
-                            导出所有分类、站点和设置数据为 JSON 文件，可用于备份或迁移到其他版本。
+                            导出分类、站点、标签、标签映射及非敏感设置为 JSON 文件，可用于备份或迁移。
                         </p>
                         <button class="btn-primary" onclick="exportData()">
                             <span>⬇️ 下载备份文件</span>
@@ -103,7 +103,7 @@ async function handleImport(event) {
 
     const msgEl = document.getElementById('importMsg');
 
-    if (!confirm('确定要导入数据吗？这将覆盖现有的所有分类、站点和设置数据！')) {
+    if (!confirm('确定要导入数据吗？这将覆盖现有的分类、站点、标签及相关设置数据！')) {
         event.target.value = '';
         return;
     }

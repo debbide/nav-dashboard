@@ -8,6 +8,25 @@ const cron = require('node-cron');
 let webdavClient = null;
 let cronJob = null;
 let createClientFn = null;
+const SENSITIVE_SETTING_KEYS = new Set(['admin_password', 'webdav_password']);
+
+function normalizeSettingsEntries(settings) {
+    if (!settings) {
+        return [];
+    }
+
+    if (Array.isArray(settings)) {
+        return settings
+            .filter(item => item && typeof item.key === 'string')
+            .map(item => ({ key: item.key, value: item.value ?? '' }));
+    }
+
+    if (typeof settings === 'object') {
+        return Object.entries(settings).map(([key, value]) => ({ key, value }));
+    }
+
+    return [];
+}
 
 // 动态导入 webdav (ESM 模块)
 async function getWebDAVClient() {
@@ -77,6 +96,8 @@ async function createWebDAVClient(url, username, password) {
 function exportData(db) {
     const categories = db.prepare('SELECT * FROM categories ORDER BY sort_order ASC').all();
     const sites = db.prepare('SELECT * FROM sites ORDER BY sort_order ASC').all();
+    const tags = db.prepare('SELECT * FROM tags ORDER BY name ASC').all();
+    const site_tags = db.prepare('SELECT site_id, tag_id FROM site_tags ORDER BY site_id ASC, tag_id ASC').all();
 
     // 获取非敏感设置
     const settings = {};
@@ -90,6 +111,8 @@ function exportData(db) {
         version: '1.0',
         categories,
         sites,
+        tags,
+        site_tags,
         settings
     };
 }
@@ -287,42 +310,61 @@ async function restoreBackup(db, filename, path = null) {
     const data = JSON.parse(content);
 
     // 验证数据格式
-    if (!data.categories || !data.sites) {
+    if (!Array.isArray(data.categories) || !Array.isArray(data.sites)) {
         throw new Error('备份文件格式无效');
     }
 
-    // 导入数据
-    const importCategories = db.transaction((categories) => {
-        db.prepare('DELETE FROM categories').run();
-        const stmt = db.prepare('INSERT INTO categories (id, name, icon, color, sort_order) VALUES (?, ?, ?, ?, ?)');
-        for (const cat of categories) {
-            stmt.run(cat.id, cat.name, cat.icon || '', cat.color || '#ff9a56', cat.sort_order || 0);
-        }
-    });
+    const tags = Array.isArray(data.tags) ? data.tags : [];
+    const siteTags = Array.isArray(data.site_tags) ? data.site_tags : [];
+    const settings = normalizeSettingsEntries(data.settings);
 
-    const importSites = db.transaction((sites) => {
+    // 原子恢复：所有数据在单一事务内完成，失败则整体回滚
+    const restoreTransaction = db.transaction(() => {
+        db.prepare('DELETE FROM site_tags').run();
         db.prepare('DELETE FROM sites').run();
-        const stmt = db.prepare('INSERT INTO sites (id, name, url, description, logo, category_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        for (const site of sites) {
-            stmt.run(site.id, site.name, site.url, site.description || '', site.logo || '', site.category_id, site.sort_order || 0);
+        db.prepare('DELETE FROM tags').run();
+        db.prepare('DELETE FROM categories').run();
+
+        const insertCategory = db.prepare('INSERT INTO categories (id, name, icon, color, sort_order) VALUES (?, ?, ?, ?, ?)');
+        for (const cat of data.categories) {
+            insertCategory.run(cat.id, cat.name, cat.icon || '', cat.color || '#ff9a56', cat.sort_order || 0);
+        }
+
+        const insertSite = db.prepare('INSERT INTO sites (id, name, url, description, logo, category_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        for (const site of data.sites) {
+            insertSite.run(site.id, site.name, site.url, site.description || '', site.logo || '', site.category_id, site.sort_order || 0);
+        }
+
+        const insertTag = db.prepare('INSERT INTO tags (id, name, color) VALUES (?, ?, ?)');
+        for (const tag of tags) {
+            insertTag.run(tag.id, tag.name, tag.color || '#6366f1');
+        }
+
+        const insertSiteTag = db.prepare('INSERT OR IGNORE INTO site_tags (site_id, tag_id) VALUES (?, ?)');
+        for (const row of siteTags) {
+            insertSiteTag.run(row.site_id, row.tag_id);
+        }
+
+        db.prepare("DELETE FROM settings WHERE key NOT IN ('admin_password', 'webdav_password')").run();
+        const insertSetting = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+        for (const entry of settings) {
+            if (!entry.key || SENSITIVE_SETTING_KEYS.has(entry.key)) {
+                continue;
+            }
+            insertSetting.run(entry.key, entry.value ?? '');
         }
     });
 
-    importCategories(data.categories);
-    importSites(data.sites);
-
-    // 导入设置（排除密码）
-    if (data.settings) {
-        const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
-        for (const [key, value] of Object.entries(data.settings)) {
-            if (key !== 'admin_password' && key !== 'webdav_password') {
-                stmt.run(key, value);
-            }
-        }
-    }
+    restoreTransaction();
 
     console.log(`恢复成功: ${filename}`);
-    return { success: true, categories: data.categories.length, sites: data.sites.length };
+    return {
+        success: true,
+        categories: data.categories.length,
+        sites: data.sites.length,
+        tags: tags.length,
+        site_tags: siteTags.length
+    };
 }
 
 // 设置定时备份

@@ -6,6 +6,21 @@ const router = express.Router();
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 
+const SENSITIVE_SETTING_KEYS = new Set(['admin_password', 'webdav_password']);
+
+function normalizeSettingsEntries(settings) {
+    if (!settings) {
+        return [];
+    }
+    if (Array.isArray(settings)) {
+        return settings.filter(item => item && typeof item.key === 'string');
+    }
+    if (typeof settings === 'object') {
+        return Object.entries(settings).map(([key, value]) => ({ key, value }));
+    }
+    return [];
+}
+
 // 数据导出（需要认证）
 router.get('/export', requireAuth, (req, res) => {
     try {
@@ -17,8 +32,16 @@ router.get('/export', requireAuth, (req, res) => {
             SELECT id, name, url, description, logo, category_id, sort_order FROM sites ORDER BY sort_order ASC
         `).all();
 
+        const tags = db.prepare(`
+            SELECT id, name, color FROM tags ORDER BY name ASC
+        `).all();
+
+        const site_tags = db.prepare(`
+            SELECT site_id, tag_id FROM site_tags ORDER BY site_id ASC, tag_id ASC
+        `).all();
+
         const settings = db.prepare(`
-            SELECT key, value FROM settings WHERE key != 'admin_password'
+            SELECT key, value FROM settings WHERE key NOT IN ('admin_password', 'webdav_password')
         `).all();
 
         const exportData = {
@@ -26,6 +49,8 @@ router.get('/export', requireAuth, (req, res) => {
             exportTime: new Date().toISOString(),
             categories,
             sites,
+            tags,
+            site_tags,
             settings
         };
 
@@ -42,15 +67,17 @@ router.post('/import', requireAuth, (req, res) => {
     try {
         const data = req.body;
 
-        if (!data.categories || !data.sites) {
+        if (!Array.isArray(data.categories) || !Array.isArray(data.sites)) {
             return res.status(400).json({ success: false, message: '无效的导入数据格式' });
         }
 
         const importTransaction = db.transaction(() => {
             // 清空现有数据
+            db.prepare('DELETE FROM site_tags').run();
             db.prepare('DELETE FROM sites').run();
+            db.prepare('DELETE FROM tags').run();
             db.prepare('DELETE FROM categories').run();
-            db.prepare("DELETE FROM settings WHERE key != 'admin_password'").run();
+            db.prepare("DELETE FROM settings WHERE key NOT IN ('admin_password', 'webdav_password')").run();
 
             // 导入分类
             const categoryIdMap = {};
@@ -61,17 +88,45 @@ router.post('/import', requireAuth, (req, res) => {
             }
 
             // 导入站点
+            const siteIdMap = {};
             const insertSite = db.prepare(`INSERT INTO sites (name, url, description, logo, category_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)`);
             for (const site of data.sites) {
                 const newCategoryId = site.category_id ? categoryIdMap[site.category_id] : null;
-                insertSite.run(site.name, site.url, site.description || '', site.logo || '', newCategoryId, site.sort_order || 0);
+                const result = insertSite.run(site.name, site.url, site.description || '', site.logo || '', newCategoryId, site.sort_order || 0);
+                siteIdMap[site.id] = result.lastInsertRowid;
+            }
+
+            // 导入标签
+            const tagIdMap = {};
+            if (Array.isArray(data.tags)) {
+                const insertTag = db.prepare('INSERT INTO tags (name, color) VALUES (?, ?)');
+                for (const tag of data.tags) {
+                    const result = insertTag.run(tag.name, tag.color || '#6366f1');
+                    tagIdMap[tag.id] = result.lastInsertRowid;
+                }
+            }
+
+            // 导入站点-标签关联
+            if (Array.isArray(data.site_tags)) {
+                const insertSiteTag = db.prepare('INSERT OR IGNORE INTO site_tags (site_id, tag_id) VALUES (?, ?)');
+                for (const row of data.site_tags) {
+                    const newSiteId = siteIdMap[row.site_id];
+                    const newTagId = tagIdMap[row.tag_id];
+                    if (newSiteId && newTagId) {
+                        insertSiteTag.run(newSiteId, newTagId);
+                    }
+                }
             }
 
             // 导入设置
-            if (data.settings) {
+            const settings = normalizeSettingsEntries(data.settings);
+            if (settings.length > 0) {
                 const insertSetting = db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`);
-                for (const setting of data.settings) {
-                    insertSetting.run(setting.key, setting.value);
+                for (const setting of settings) {
+                    if (!setting || !setting.key || SENSITIVE_SETTING_KEYS.has(setting.key)) {
+                        continue;
+                    }
+                    insertSetting.run(setting.key, setting.value ?? '');
                 }
             }
         });
@@ -80,7 +135,7 @@ router.post('/import', requireAuth, (req, res) => {
 
         res.json({
             success: true,
-            message: `导入成功: ${data.categories.length} 个分类, ${data.sites.length} 个站点`
+            message: `导入成功: ${data.categories.length} 个分类, ${data.sites.length} 个站点, ${(data.tags || []).length} 个标签`
         });
     } catch (error) {
         res.status(500).json({ success: false, message: '导入失败: ' + error.message });
