@@ -9,8 +9,8 @@ WORKDIR /app
 # 复制依赖文件
 COPY package*.json ./
 
-# 安装所有依赖（包括编译原生模块）
-RUN npm install --only=production
+# 安装生产依赖（包括编译原生模块）
+RUN npm ci --omit=dev
 
 # ============ 运行阶段 ============
 FROM node:18-alpine
@@ -24,14 +24,14 @@ COPY server ./server
 COPY public ./public
 
 # 创建数据目录并设置权限，安装 curl 用于健康检查
-RUN mkdir -p /app/data /app/uploads && chmod 777 /app/uploads /app/data && apk add --no-cache curl
+RUN mkdir -p /app/data /app/uploads && chmod 755 /app/uploads /app/data && apk add --no-cache curl
 
 # 暴露端口
 EXPOSE 3000
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3000/ || exit 1
+    CMD curl -fsS http://localhost:3000/health/ready || exit 1
 
 # 启动命令
 CMD ["node", "server/index.js"]

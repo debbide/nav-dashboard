@@ -1,6 +1,6 @@
 services:
   nav-dashboard:
-    image: ghcr.io/debbide/simple-nav-dashboard:latest
+    image: ghcr.io/debbide/simple-nav-dashboard:v1.3.0
     container_name: nav-dashboard
     restart: unless-stopped
     ports:
@@ -9,5 +9,11 @@ services:
       - ./data:/app/data
       - ./uploads:/app/uploads
     environment:
-      - ADMIN_PASSWORD=admin123
-      - TZ=Asia/Shanghai
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      - TZ=${TZ:-Asia/Shanghai}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
