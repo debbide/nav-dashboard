@@ -1,10 +1,8 @@
 # 导航仪表盘 NavDashboard
 
-一个基于卡片式布局的现代化导航站点，采用磨砂玻璃（Glassmorphism）设计风格。支持 Cloudflare 和 Docker 两种部署方式，还有浏览器插件快速添加收藏。
+一个基于卡片式布局的现代化导航站点，采用磨砂玻璃（Glassmorphism）设计风格。Docker 是目前主要维护的部署方式，同时保留 Cloudflare 兼容性支持。
 
 **🔗 在线演示**：https://nav.cscs.qzz.io
-
-
 
 ## ✨ 特性
 
@@ -35,13 +33,76 @@
 - **右键菜单** - 任意网页右键添加到导航站
 - **自动获取** - 自动填充标题、URL、图标
 - **分类选择** - 支持选择已有分类
-- **双版本兼容** - 同时支持 CF 版和 Docker 版
+- **双版本兼容** - 同时支持 Docker 版和 CF 版
 
 ---
 
 ## 🚀 快速部署
 
-### ☁️ 方式一：Cloudflare 部署（推荐）
+### 🐳 方式一：Docker 部署（推荐/主要维护）
+
+适合有自己服务器的用户，数据本地存储，是目前项目的主要维护路径。
+
+#### docker-compose.yml
+
+```yaml
+services:
+  nav-dashboard:
+    image: ghcr.io/debbide/simple-nav-dashboard:v1.3.0
+    container_name: nav-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      - TZ=${TZ:-Asia/Shanghai}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+```
+
+#### 部署步骤
+
+```bash
+# 创建目录
+mkdir nav-dashboard && cd nav-dashboard
+
+# 创建 .env（必须设置强密码）
+cat > .env <<'EOF'
+ADMIN_PASSWORD=replace-with-a-strong-password
+TZ=Asia/Shanghai
+EOF
+
+# 创建 docker-compose.yml（内容如上）
+
+# 启动
+docker-compose up -d
+
+# 访问
+# 主页：http://你的IP:3000
+# 后台：http://你的IP:3000/admin.html
+```
+
+> 部署前请先设置强 `ADMIN_PASSWORD`，避免使用弱口令。
+
+#### 更新升级
+
+```bash
+docker-compose pull
+docker-compose up -d
+```
+
+---
+
+### ☁️ 方式二：Cloudflare 部署（仅限兼容性支持）
+
+> ⚠️ **注意**：Cloudflare 部署方式目前仅作为现有用户的兼容性支持，不再作为新功能开发的主要路径。
 
 免费部署到 Cloudflare Pages，全球 CDN 加速。
 
@@ -104,53 +165,6 @@
 
 ---
 
-### 🐳 方式二：Docker 部署
-
-适合有自己服务器的用户，数据本地存储。
-
-#### docker-compose.yml
-
-```yaml
-services:
-  nav-dashboard:
-    image: ghcr.io/debbide/simple-nav-dashboard:latest
-    container_name: nav-dashboard
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-      - ./uploads:/app/uploads
-    environment:
-      - ADMIN_PASSWORD=admin123
-      - TZ=Asia/Shanghai
-```
-
-#### 部署步骤
-
-```bash
-# 创建目录
-mkdir nav-dashboard && cd nav-dashboard
-
-# 创建 docker-compose.yml（内容如上）
-
-# 启动
-docker-compose up -d
-
-# 访问
-# 主页：http://你的IP:3000
-# 后台：http://你的IP:3000/admin.html
-```
-
-#### 更新升级
-
-```bash
-docker-compose pull
-docker-compose up -d
-```
-
----
-
 ## 🧩 浏览器插件
 
 支持在任意网页右键快速添加到导航仪表盘。
@@ -168,8 +182,8 @@ docker-compose up -d
 1. 点击工具栏的插件图标
 2. 点击 ⚙️ 设置按钮
 3. 输入你的导航站地址：
-   - CF 版：`https://nav-dashboard.pages.dev`
    - Docker 版：`http://你的IP:3000`
+   - CF 版：`https://nav-dashboard.pages.dev`
 4. 如果设置了密码，填入密码
 5. 保存并测试连接
 
@@ -194,7 +208,7 @@ nav-dashboard/
 ├── src/
 │   └── index.js           # Workers API
 ├── public/                # 前端静态文件
-├── docker/                # Docker 版本
+├── docker/                # Docker 版本（主要维护）
 ├── chrome-extension/      # 浏览器插件
 ├── .github/workflows/     # GitHub Actions
 ├── schema.sql             # 数据库架构
@@ -234,34 +248,38 @@ nav-dashboard/
 ## 🛠️ 本地开发
 
 ```bash
-# 安装依赖
+# Docker 版开发（推荐）
+cd docker
 npm install
-
-# 本地开发（CF 版）
 npm run dev
 
-# Docker 版开发
-cd docker
+# Docker 版最小测试
+npm test
+
+# CF 版开发（仅限兼容性维护）
+npm install
 npm run dev
 ```
+
+Docker 管理相关写操作现在由服务端鉴权保护，前端隐藏按钮不再是唯一保护层。
 
 ---
 
 ## 🐛 故障排查
 
+### Docker 版无法访问？
+检查防火墙是否开放端口。
+
 ### CF 版部署失败？
-1. 检查 4 个 Secrets 是否正确配置
-2. 验证 API Token 权限
-3. 查看 Actions 日志
+1. 检查 4 个 Secrets 是否正确配置。
+2. 验证 API Token 权限。
+3. 查看 Actions 日志。
 
 ### CF 版 Pages 显示错误？
-确认已配置 D1 和 KV 绑定（第 6 步）
-
-### Docker 版无法访问？
-检查防火墙是否开放端口
+确认已配置 D1 和 KV 绑定（第 6 步）。
 
 ### 插件提示网络错误？
-检查 API 地址是否正确，确认导航站正在运行
+检查 API 地址是否正确，确认导航站正在运行。
 
 ---
 
@@ -271,7 +289,7 @@ npm run dev
 
 如果你从旧版本升级，可能需要手动执行数据库迁移。
 
-#### Docker 版升级
+#### Docker 版升级（主要维护）
 
 新版本服务器启动时会**自动检测并添加新字段**，通常只需：
 
@@ -290,7 +308,7 @@ docker exec -it nav-dashboard sqlite3 /app/data/nav.db "ALTER TABLE sites ADD CO
 docker-compose restart
 ```
 
-#### Cloudflare 版升级
+#### Cloudflare 版升级（仅限兼容性维护）
 
 在 Cloudflare Dashboard 的 D1 数据库控制台执行：
 

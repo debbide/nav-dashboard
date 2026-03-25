@@ -1,6 +1,6 @@
-# 导航站 - Docker 版本
+# 导航站 - Docker 版本（主要维护）
 
-一个基于卡片式布局的现代化导航站点，采用磨砂玻璃设计风格，支持 Docker 自托管部署。
+一个基于卡片式布局的现代化导航站点，采用磨砂玻璃设计风格，支持 Docker 自托管部署。这是目前项目的主要维护版本。
 
 ![导航站截图](../screenshot.png)
 
@@ -18,6 +18,12 @@
 ### 使用 Docker Compose（推荐）
 
 ```bash
+# 1) 创建 .env 并设置强密码（必填）
+cat > .env <<'EOF'
+ADMIN_PASSWORD=replace-with-a-strong-password
+TZ=Asia/Shanghai
+EOF
+
 # 启动服务
 docker-compose up -d
 
@@ -29,6 +35,8 @@ docker-compose down
 ```
 
 访问：`http://localhost:3000`
+
+> 请务必在启动前设置强 `ADMIN_PASSWORD`，不要使用弱口令。
 
 ### 使用 Docker 命令
 
@@ -42,7 +50,7 @@ docker run -d \
   -p 3000:3000 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/uploads:/app/uploads \
-  -e ADMIN_PASSWORD=admin123 \
+  -e ADMIN_PASSWORD=replace-with-a-strong-password \
   nav-dashboard
 ```
 
@@ -53,7 +61,7 @@ docker run -d \
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `PORT` | `3000` | 服务端口 |
-| `ADMIN_PASSWORD` | `admin123` | 初始管理密码 |
+| `ADMIN_PASSWORD` | *(必填，无安全默认值建议)* | 管理后台密码 |
 | `TZ` | `UTC` | 时区 |
 
 ### 数据持久化
@@ -83,7 +91,17 @@ docker/
 
 访问 `/admin.html` 进入管理后台
 
-**默认密码**：`admin123`（首次登录后请修改）
+**管理密码**：使用部署时设置的 `ADMIN_PASSWORD`
+
+管理员相关写操作和备份接口由服务端鉴权保护，未登录请求会返回 `401`。
+
+## ✅ 基础验证
+
+```bash
+npm test
+```
+
+当前最小测试覆盖 Docker 端的服务启动结构和关键鉴权边界。
 
 ## 📄 许可证
 
