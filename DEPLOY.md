@@ -1,4 +1,6 @@
-# 快速部署指南
+# 快速部署指南（仅限 Cloudflare 兼容性支持）
+
+> ⚠️ **注意**：此部署指南仅适用于 Cloudflare 部署方式。Cloudflare 部署目前仅作为现有用户的兼容性支持，不再作为新功能开发的主要路径。对于新用户，建议使用 [Docker 部署方式](README.md#方式一docker-部署推荐主要维护)。
 
 基于 GitHub Actions 的一键部署方案，使用 4 个 Secrets 变量配置。
 

@@ -1,4 +1,6 @@
-# Workers API 配置
+# Workers API 配置（仅限 Cloudflare 兼容性支持）
+
+> ⚠️ **注意**：此配置仅适用于 Cloudflare 部署方式。Cloudflare 部署目前仅作为现有用户的兼容性支持，不再作为新功能开发的主要路径。对于新用户，建议使用 [Docker 部署方式](README.md#方式一docker-部署推荐主要维护)。
 
 如果需要手动配置 Workers API 地址，请按以下步骤：
 
