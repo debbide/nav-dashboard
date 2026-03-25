@@ -5,7 +5,8 @@
     "main": "server/index.js",
     "scripts": {
         "start": "node server/index.js",
-        "dev": "node server/index.js"
+        "dev": "node server/index.js",
+        "test": "node --test test/**/*.test.js"
     },
     "keywords": [
         "navigation",
