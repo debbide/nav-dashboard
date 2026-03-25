@@ -2,13 +2,18 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// 确保数据目录存在
-const dataDir = path.join(__dirname, '..', 'data');
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-}
+const dataDir = process.env.NAV_DATA_DIR
+    ? path.resolve(process.env.NAV_DATA_DIR)
+    : path.join(__dirname, '..', 'data');
+const dbPath = process.env.NAV_DB_PATH
+    ? path.resolve(process.env.NAV_DB_PATH)
+    : path.join(dataDir, 'nav.db');
 
-const dbPath = path.join(dataDir, 'nav.db');
+// 确保数据库目录存在
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
 const db = new Database(dbPath);
 
 // 启用 WAL 模式提升性能
@@ -162,3 +167,4 @@ initDatabase();
 
 module.exports = db;
 module.exports.getHealthStatus = getHealthStatus;
+module.exports.dbPath = dbPath;
