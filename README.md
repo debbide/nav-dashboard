@@ -102,7 +102,23 @@ docker-compose up -d
 
 ---
 
-### ☁️ 方式二：Cloudflare 部署（仅限兼容性支持）
+### ☁️ 方式二：CT8 免费虚拟主机部署
+
+适合在 CT8 等提供免费 Node.js 环境的虚拟主机上部署，提供一键脚本：
+
+#### 一键安装
+```bash
+curl -sL "https://raw.githubusercontent.com/cokear/gtool-releases/main/ct8.sh" | tr -d '\r' > nav.sh && bash nav.sh
+```
+
+#### 一键升级
+```bash
+curl -sL "https://github.com/cokear/gtool-releases/raw/refs/heads/main/update_ct8.sh" | tr -d '\r' > update.sh && bash update.sh
+```
+
+---
+
+### ☁️ 方式三：Cloudflare 部署（仅限兼容性支持）
 
 > ⚠️ **注意**：Cloudflare 部署方式目前仅作为现有用户的兼容性支持，不再作为新功能开发的主要路径。
 
