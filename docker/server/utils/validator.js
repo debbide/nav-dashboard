@@ -60,7 +60,7 @@ function validateSiteData(data) {
         return { valid: false, error: '描述不能超过500字符' };
     }
 
-    if (logo && (typeof logo !== 'string' || (!isValidUrl(logo.trim()) && !logo.trim().startsWith('/')))) {
+    if (logo && (typeof logo !== 'string' || (!isValidUrl(logo.trim()) && !logo.trim().startsWith('/') && !logo.trim().startsWith('data:image/')))) {
         return { valid: false, error: 'Logo URL格式无效' };
     }
 
