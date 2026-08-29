@@ -16,13 +16,13 @@
 
 <body>
   <!-- 暗色模式切换 -->
-  <button id="themeToggle" class="theme-toggle" title="切换主题">🌙</button>
+  <button id="themeToggle" class="theme-toggle" type="button" title="切换主题" aria-label="切换明暗主题">🌙</button>
 
   <!-- PWA 安装提示 -->
-  <div id="pwaPrompt" class="pwa-prompt" style="display: none;">
+  <div id="pwaPrompt" class="pwa-prompt" role="status" aria-live="polite" style="display: none;">
     <span>📲 添加到主屏幕，获得 App 体验</span>
-    <button id="pwaInstall" class="pwa-btn">安装</button>
-    <button id="pwaClose" class="pwa-close">×</button>
+    <button id="pwaInstall" class="pwa-btn" type="button">安装</button>
+    <button id="pwaClose" class="pwa-close" type="button" aria-label="关闭安装提示">×</button>
   </div>
 
   <!-- 复制成功提示 -->
@@ -74,39 +74,40 @@
     <header class="header-simple">
       <div class="search-box-center glass-effect">
         <div class="search-engines">
-          <button type="button" class="engine-btn active" data-engine="google" title="Google">
+          <button type="button" class="engine-btn active" data-engine="google" title="Google" aria-label="使用 Google 搜索" aria-pressed="true">
             <img src="https://www.google.com/favicon.ico" alt="Google">
           </button>
-          <button type="button" class="engine-btn" data-engine="bing" title="Bing">
+          <button type="button" class="engine-btn" data-engine="bing" title="Bing" aria-label="使用 Bing 搜索" aria-pressed="false">
             <img src="https://www.bing.com/favicon.ico" alt="Bing">
           </button>
-          <button type="button" class="engine-btn" data-engine="github" title="GitHub">
+          <button type="button" class="engine-btn" data-engine="github" title="GitHub" aria-label="使用 GitHub 搜索" aria-pressed="false">
             <img src="https://github.githubassets.com/favicons/favicon.svg" alt="GitHub">
           </button>
         </div>
         <div class="search-input-wrapper">
-          <input type="text" id="searchInput" class="search-input" placeholder=" " autocomplete="off">
+          <label class="sr-only" for="searchInput">搜索网站或输入关键词</label>
+          <input type="search" id="searchInput" class="search-input" placeholder=" " autocomplete="off" aria-label="搜索网站或输入关键词">
           <label for="searchInput" class="search-label">搜索站点...</label>
           <div id="searchSuggestions" class="search-suggestions"></div>
         </div>
-        <button id="searchBtn" class="search-btn">🔍</button>
+        <button id="searchBtn" class="search-btn" type="button" aria-label="搜索">🔍</button>
         <!-- 标签筛选按钮 -->
         <div class="tag-filter-wrapper" style="display: none;">
-          <button id="tagFilterBtn" class="tag-filter-btn-header" title="标签筛选">🏷️</button>
+          <button id="tagFilterBtn" class="tag-filter-btn-header" type="button" title="标签筛选" aria-label="按标签筛选" aria-haspopup="true" aria-expanded="false">🏷️</button>
           <div id="tagFilterDropdown" class="tag-filter-dropdown" style="display: none;">
             <div class="tag-filter-dropdown-header">标签筛选</div>
             <div id="tagFilterList" class="tag-filter-dropdown-list">
               <!-- 动态加载标签 -->
             </div>
             <div class="tag-filter-dropdown-footer">
-              <button id="clearTagFilterBtn" class="tag-filter-clear-btn">清除筛选</button>
+              <button id="clearTagFilterBtn" class="tag-filter-clear-btn" type="button">清除筛选</button>
             </div>
           </div>
         </div>
       </div>
       <!-- 齿轮菜单 -->
       <div class="gear-menu-wrapper">
-        <button id="gearMenuBtn" class="gear-btn" title="菜单">⚙️</button>
+        <button id="gearMenuBtn" class="gear-btn" type="button" title="菜单" aria-label="打开功能菜单" aria-haspopup="true" aria-expanded="false">⚙️</button>
         <div id="gearMenu" class="gear-dropdown" style="display: none;">
           <button id="quickAddBtn" class="gear-menu-item">
             <span class="gear-menu-icon">➕</span>
@@ -165,7 +166,7 @@
 
   <footer
     style="position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(255,255,255,0.5);">
-    <a href="https://github.com/debbide/nav-dashboard" target="_blank"
+    <a href="https://github.com/debbide/nav-dashboard" target="_blank" rel="noopener noreferrer"
       style="color: rgba(255,255,255,0.6); text-decoration: none;">
       GitHub: debbide/nav-dashboard
     </a>

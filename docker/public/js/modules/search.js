@@ -71,8 +71,12 @@ export function setupSearch() {
     // 搜索引擎切换
     engineBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            engineBtns.forEach(b => b.classList.remove('active'));
+            engineBtns.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
+            });
             btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
             currentEngine = btn.dataset.engine;
             searchInput.focus();
         });

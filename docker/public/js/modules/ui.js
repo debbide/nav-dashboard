@@ -364,6 +364,7 @@ export function setupTagFilterDropdown() {
     tagFilterBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isVisible = tagFilterDropdown.style.display !== 'none';
+        tagFilterBtn.setAttribute('aria-expanded', String(!isVisible));
         tagFilterDropdown.style.display = isVisible ? 'none' : 'block';
     });
 
@@ -379,6 +380,7 @@ export function setupTagFilterDropdown() {
     document.addEventListener('click', (e) => {
         if (!tagFilterDropdown.contains(e.target) && e.target !== tagFilterBtn) {
             tagFilterDropdown.style.display = 'none';
+            tagFilterBtn.setAttribute('aria-expanded', 'false');
         }
     });
 }

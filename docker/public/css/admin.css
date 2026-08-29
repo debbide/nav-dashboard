@@ -7,6 +7,35 @@
     margin-bottom: var(--spacing-xl);
 }
 
+/* Accessibility and keyboard interaction */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 3px;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 /* ==================== 侧边栏 ==================== */
 .admin-sidebar {
     border-radius: var(--radius-lg);

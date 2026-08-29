@@ -53,12 +53,14 @@ export function initEditMode() {
         e.stopPropagation();
         const isVisible = gearMenu.style.display === 'block';
         gearMenu.style.display = isVisible ? 'none' : 'block';
+        gearMenuBtn.setAttribute('aria-expanded', String(!isVisible));
     });
 
     // 点击其他地方关闭菜单
     document.addEventListener('click', (e) => {
         if (!gearMenu.contains(e.target) && e.target !== gearMenuBtn) {
             gearMenu.style.display = 'none';
+            gearMenuBtn.setAttribute('aria-expanded', 'false');
         }
     });
 
@@ -71,6 +73,7 @@ export function initEditMode() {
 
         editModeBtn.addEventListener('click', () => {
             gearMenu.style.display = 'none';
+            gearMenuBtn.setAttribute('aria-expanded', 'false');
 
             if (getEditMode()) {
                 disableEditMode();
@@ -93,6 +96,7 @@ export function initEditMode() {
         adminBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             gearMenu.style.display = 'none';
+            gearMenuBtn.setAttribute('aria-expanded', 'false');
 
             openAdminPageInNewTab();
         });
