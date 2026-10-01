@@ -1,5 +1,5 @@
 // Service Worker for nav-dashboard
-const CACHE_NAME = 'nav-dashboard-v2';
+const CACHE_NAME = 'nav-dashboard-v3';
 const STATIC_ASSETS = [
     '/',
     '/index.html',

@@ -98,10 +98,19 @@ function createApp() {
         next();
     });
 
-    // 静态文件服务（带缓存）
+    // 静态文件服务：etag 协商缓存
+    // js/css/html 走 no-cache（每次协商、命中回 304），更新即时生效，
+    // 手工 ?v= 版本号退役；图片字体走 1 天强缓存
     app.use(express.static(path.join(__dirname, '..', 'public'), {
-        maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
-        etag: true
+        etag: true,
+        maxAge: 0,
+        setHeaders: (res, filePath) => {
+            if (/\.(png|jpe?g|gif|svg|ico|webp|woff2?|ttf)$/i.test(filePath)) {
+                res.setHeader('Cache-Control', 'public, max-age=86400');
+            } else {
+                res.setHeader('Cache-Control', 'no-cache');
+            }
+        }
     }));
 
     // ==================== 健康检查 ====================
