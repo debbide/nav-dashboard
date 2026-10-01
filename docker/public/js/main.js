@@ -7,7 +7,8 @@
 import { initTheme, loadBackground, loadCategories, loadTags, setupTooltip } from './modules/ui.js';
 import { setupSearch, setupKeyboardShortcuts } from './modules/search.js';
 import { setupInfiniteScroll } from './modules/lazyload.js';
-import { registerServiceWorker, initPwaPrompt, setupCopyLinks } from './modules/pwa.js';
+import { registerServiceWorker, initPwaPrompt } from './modules/pwa.js';
+import { setupQuickDelete } from './modules/quickDelete.js';
 import { initEditMode, initQuickAdd } from './modules/quickAdd.js';
 import { initSettings, openSettingsPanel } from './modules/settings.js';
 
@@ -32,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // PWA
     registerServiceWorker();
     initPwaPrompt();
-    setupCopyLinks();
+    // 右键 / 长按快捷菜单（复制链接、删除站点）
+    setupQuickDelete();
 
     // 编辑模式和快速添加
     initEditMode();

@@ -66,69 +66,32 @@ export function initPwaPrompt() {
 }
 
 /**
- * 设置复制链接功能
+ * 复制到剪贴板（供右键菜单等调用）
  */
-export function setupCopyLinks() {
-    // 复制到剪贴板
-    async function copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showCopyToast();
-        } catch (err) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-9999px';
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showCopyToast();
-        }
+export async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast();
+    } catch (err) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast();
     }
+}
 
-    function showCopyToast() {
-        const toast = document.getElementById('copyToast');
-        if (toast) {
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 1500);
-        }
+export function showToast(text = '✓ 链接已复制') {
+    const toast = document.getElementById('copyToast');
+    if (toast) {
+        toast.textContent = text;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 1500);
     }
-
-    // 右键复制
-    document.addEventListener('contextmenu', (e) => {
-        const card = e.target.closest('.site-card');
-        if (card && card.dataset.url) {
-            e.preventDefault();
-            copyToClipboard(card.dataset.url);
-        }
-    });
-
-    // 移动端长按复制
-    let longPressTimer = null;
-    document.addEventListener('touchstart', (e) => {
-        const card = e.target.closest('.site-card');
-        if (card && card.dataset.url) {
-            longPressTimer = setTimeout(() => {
-                e.preventDefault();
-                copyToClipboard(card.dataset.url);
-            }, 600);
-        }
-    });
-
-    document.addEventListener('touchend', () => {
-        if (longPressTimer) {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
-        }
-    });
-
-    document.addEventListener('touchmove', () => {
-        if (longPressTimer) {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
-        }
-    });
 }

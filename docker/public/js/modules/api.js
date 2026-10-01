@@ -85,6 +85,16 @@ export async function recordClick(siteId) {
 }
 
 /**
+ * 删除站点（需管理鉴权，服务端通过 cookie token 校验）
+ */
+export async function deleteSite(siteId) {
+    const response = await fetch(`${API_BASE}/api/sites/${encodeURIComponent(siteId)}`, {
+        method: 'DELETE'
+    });
+    return await response.json();
+}
+
+/**
  * 获取标签列表
  */
 export async function fetchTags() {

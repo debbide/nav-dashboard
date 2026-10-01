@@ -1739,6 +1739,72 @@ body.edit-mode .edit-mode-hint {
   color: white;
 }
 
+/* 右键快捷菜单 */
+.card-menu {
+  position: fixed;
+  z-index: 3000;
+  min-width: 160px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.card-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.card-menu-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.card-menu-danger {
+  color: #e5484d;
+}
+
+.dark-mode .card-menu {
+  background: rgba(30, 30, 40, 0.95);
+}
+
+.dark-mode .card-menu-item {
+  color: #f0f0f0;
+}
+
+.dark-mode .card-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .card-menu-danger {
+  color: #ff6369;
+}
+
+/* 危险操作按钮 */
+.btn-danger {
+  background: #e5484d;
+  border: 1px solid #e5484d;
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #d13438;
+  border-color: #d13438;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* 移动端适配 */
 @media (max-width: 600px) {
   .edit-mode-toggle {
